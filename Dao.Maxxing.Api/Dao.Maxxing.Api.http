@@ -1,0 +1,6 @@
+@Dao.Maxxing.Api_HostAddress = http://localhost:5044
+
+GET {{Dao.Maxxing.Api_HostAddress}}/api/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Dao.Maxxing.Api/Dao.Maxxing.Api.csproj" />
+  <Project Path="Dao.Maxxing.AppHost/Dao.Maxxing.AppHost.csproj" />
+  <Project Path="Dao.Maxxing.ServiceDefaults/Dao.Maxxing.ServiceDefaults.csproj" />
+</Solution>
