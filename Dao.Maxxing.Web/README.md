@@ -1,5 +1,34 @@
 # DaoAspireAngularWeb
 
+## Maxxing interactive prototype
+
+The root route (`/`) is a responsive, sample-data-only nutrition prototype. Start
+it with `npm start` and open the URL printed by Angular. It runs without the API,
+Google credentials, a database, or Azure. The original authentication/weather
+template remains at `/template` and still requires its backend configuration.
+
+Use the four navigation sections to try diary logging, custom foods, reusable
+meals, cooked-weight recipes, weekly nutrition, weights with illustrated photo
+placeholders, two-photo comparison, goals, and meal-section settings. The banner's
+**Sign-in demo** demonstrates allowed and denied accounts. Settings contains
+**Simulate next save failing**, a fictional export preview, and confirmed deletion.
+After a simulated failure, submit the retained form again to retry.
+
+All data is fictional and held in memory: **Reset demo** or refreshing restores
+the examples. No real camera access, food lookup, authentication, photo upload,
+download, or persistent deletion occurs. Barcode `0123456789012` matches sample
+oats; other unknown barcodes demonstrate the manual-entry fallback. Weight photos
+are explicitly labeled illustrations, not personal images.
+
+Saved diary nutrition is a snapshot. Library edits do not rewrite old logs.
+Goal updates start today; meal-default updates start tomorrow and do not rewrite
+existing diaries. Weekly averages include only days explicitly marked complete.
+Food edits make a completed day incomplete again.
+
+Run `npm run build` and `npm test -- --watch=false` for validation. Production
+account enforcement, food-data integration, photo storage, export files, BFF,
+database, and Azure deployment are not implemented in this prototype.
+
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.1.3.
 
 ## Development server

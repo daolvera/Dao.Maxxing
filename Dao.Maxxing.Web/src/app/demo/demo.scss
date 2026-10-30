@@ -1,0 +1,56 @@
+:host {
+  --green: #058743;
+  --green-dark: #046b35;
+  --ink: #203c2e;
+  --muted: #627068;
+  display: block;
+  min-height: 100dvh;
+  color: var(--ink);
+  background: #f5f7f5;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+.demo-banner { min-height: 36px; box-sizing: border-box; padding: 5px 28px; display: flex; justify-content: space-between; gap: 12px; align-items: center; background: #e7f2eb; font-size: 12px; color: #335c43; }
+.demo-banner button { border: 0; background: none; color: #235a37; text-decoration: underline; padding: 4px 8px; min-height: 28px; cursor: pointer; font: inherit; }
+.demo-dot { display: inline-block; height: 6px; width: 6px; border-radius: 50%; background: var(--green); margin-right: 7px; }
+.app-layout { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: calc(100dvh - 38px); }
+.sidebar { display: flex; flex-direction: column; padding: 34px 18px 20px; background: #fff; border-right: 1px solid #e3e9e4; }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font-size: 28px; font-weight: 700; color: #173a28; letter-spacing: -1px; margin: 0 12px 54px; }
+.brand-period { color: var(--green); margin-left: -10px; }
+.brand-mark { width: 32px; height: 34px; display: grid; place-items: center; background: var(--green); color: white; border-radius: 11px 11px 11px 3px; }
+.sidebar-label { font-size: 10px; font-weight: 650; color: #67776c; letter-spacing: 1.6px; margin: 0 18px 14px; }
+nav { display: grid; gap: 7px; }
+nav button { display: flex; align-items: center; gap: 13px; width: 100%; padding: 14px 18px; border: 0; border-radius: 7px; background: none; color: #5b6b60; font: 500 14px 'Segoe UI', sans-serif; text-align: left; cursor: pointer; }
+nav button.active { color: #046b35; background: #eaf5ee; font-weight: 650; }
+nav button:hover { background: #f0f5f1; }
+.sidebar-bottom { margin-top: auto; padding-top: 70px; }
+.private-note { display: flex; gap: 13px; align-items: flex-start; padding: 20px 14px; color: #467455; }
+.private-note p { margin: 0; font-size: 12px; line-height: 1.7; }
+.private-note span { color: #66776a; }
+.profile-button { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; border-top: 1px solid #e8ede8; padding: 20px 5px 0; color: #304d3c; text-align: left; background: white; font: 12px 'Segoe UI', sans-serif; cursor: pointer; }
+.avatar { width: 32px; height: 32px; border-radius: 50%; background: #edf2e8; display: grid; place-items: center; font-weight: 600; }
+.profile-button small { display: block; color: #6a766d; margin-top: 4px; font-size: 10px; }
+.profile-button mx-icon { margin-left: auto; width: 16px; }
+.workspace { min-width: 0; }
+.workspace-top { display: flex; justify-content: space-between; padding: 24px 44px; border-bottom: 1px solid #e4e9e4; color: #637269; font-size: 12px; background: #fcfdfc; }
+.privacy-label { display: flex; gap: 8px; align-items: center; }
+.privacy-label span { font-size: 7px; color: var(--green); }
+main { max-width: 1400px; padding: 34px 44px 20px; margin: auto; outline: none; }
+.workspace-footer { display: flex; justify-content: space-between; gap: 16px; margin-top: 42px; padding: 22px 0 8px; border-top: 1px solid #e0e7e0; color: #5e6f62; font-size: 11px; }
+.skip-link { position: fixed; top: -100px; left: 20px; padding: 12px 20px; background: #163e26; color: white; z-index: 20; }
+.skip-link:focus { top: 8px; }
+@media (min-width: 1600px) { .sidebar { padding-top: 40px; } main { padding-top: 42px; } }
+@media (max-width: 1100px) { .app-layout { grid-template-columns: 190px minmax(0, 1fr); } .sidebar { padding: 30px 12px 20px; } main { padding: 28px 26px; } .workspace-top { padding: 20px 26px; } .brand { font-size: 25px; } }
+@media (max-width: 700px) {
+  .demo-banner { padding: 5px 15px; font-size: 11px; }
+  .banner-detail { display: none; }
+  .app-layout { display: block; }
+  .sidebar { padding: 18px 16px 0; border-right: none; border-bottom: 1px solid #e0e7e0; }
+  .brand { margin: 0 0 18px; font-size: 25px; }
+  .sidebar-label, .sidebar-bottom, .workspace-top { display: none; }
+  nav { display: flex; gap: 0; justify-content: space-between; }
+  nav button { flex-direction: column; gap: 6px; padding: 10px 4px 13px; border-radius: 0; width: 25%; font-size: 11px; border-bottom: 2px solid transparent; white-space: nowrap; }
+  nav button.active { background: none; border-bottom-color: var(--green); }
+  main { padding: 25px 16px 16px; }
+  .workspace-footer { font-size: 10px; }
+  .access-page { padding: 48px 24px; }
+}

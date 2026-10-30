@@ -8,6 +8,8 @@ import { CookieProvider } from './cookie-provider';
 export const authenticationProviders = [
   { provide: AUTH_PROVIDER, useClass: CookieProvider },
   provideAppInitializer(async () => {
+    // The isolated prototype must not contact the real authentication backend.
+    if (window.location.pathname !== '/template') return;
     const service = inject(AuthService);
     await service.initialize();
   }),

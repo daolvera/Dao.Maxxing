@@ -1,0 +1,42 @@
+<a href="#main-content" class="skip-link">Skip to content</a>
+<div class="demo-banner"><span><span class="demo-dot" aria-hidden="true"></span> Interactive prototype <span class="banner-detail">· Fictional data, no real integrations</span></span><div><button type="button" (click)="access.set('signed-out')">Sign-in demo</button><button type="button" (click)="reset()">Reset demo</button></div></div>
+@if (access() !== 'signed-in') {
+  <main class="access-page" id="main-content">
+    <div class="access-brand"><mx-icon name="leaf" /> Maxxing</div>
+    <section class="access-panel">
+      @if (access() === 'denied') {
+        <h1>This space is private.</h1><p>That demo account isn't authorized. Only your approved Google account can access Maxxing.</p><button type="button" class="primary" (click)="access.set('signed-out')">Try a different demo account</button>
+      } @else {
+        <h1>A little clarity for your everyday.</h1><p>Your food, your targets, your own pace. One private space that feels at home on every screen.</p>
+        <button type="button" class="primary google-button" (click)="access.set('signed-in')"><span aria-hidden="true">G</span> Continue with Google (demo)</button>
+        <button type="button" (click)="access.set('denied')">Try an unauthorized demo account</button>
+      }
+      <p class="small-note">Simulated sign-in only. No account information is collected and Google is not contacted.</p>
+    </section>
+  </main>
+} @else {
+  <div class="app-layout">
+    <aside class="sidebar">
+      <a class="brand" href="/" (click)="$event.preventDefault(); navigate('Diary')"><span class="brand-mark"><mx-icon name="leaf" /></span>Maxxing<span class="brand-period">.</span></a>
+      <span class="sidebar-label">YOUR EVERYDAY</span>
+      <nav aria-label="Main navigation">
+        @for (item of nav; track item.name) { <button type="button" [class.active]="screen() === item.name" [attr.aria-current]="screen() === item.name ? 'page' : null" (click)="navigate(item.name)"><mx-icon [name]="item.icon" /><span>{{ item.name }}</span></button> }
+      </nav>
+      <div class="sidebar-bottom"><div class="private-note"><mx-icon name="leaf" /><p>A space for you.<br /><span>Nothing to prove.</span></p></div><button type="button" class="profile-button" (click)="access.set('signed-out')"><span class="avatar">M</span><span>My private space<small>View demo sign-in</small></span><mx-icon name="logout" /></button></div>
+    </aside>
+    <div class="workspace">
+      <div class="workspace-top"><span>Personal nutrition</span><span class="privacy-label"><span aria-hidden="true">&#9679;</span> Just for you</span></div>
+      <main id="main-content" #main tabindex="-1">
+        <div class="live-messages" aria-live="polite">@if (store.notice()) { <div class="notice"><mx-icon name="check" /><span>{{ store.notice() }}</span><button type="button" aria-label="Dismiss message" (click)="store.notice.set('')">&#215;</button></div> }</div>
+        @if (store.error()) { <div class="error-banner" role="alert"><div><strong>That didn't save.</strong><p>{{ store.error() }}</p></div><button type="button" (click)="retryHint()">How to retry</button><button type="button" aria-label="Dismiss error" (click)="store.error.set('')">&#215;</button></div> }
+        @switch (screen()) {
+          @case ('Diary') { <mx-diary /> }
+          @case ('Foods & recipes') { <mx-library /> }
+          @case ('Progress') { <mx-progress /> }
+          @case ('Settings') { <mx-settings (resetDemo)="reset()" /> }
+        }
+        <footer class="workspace-footer"><span>Made for your everyday.</span><span>Maxxing · Sample data only</span></footer>
+      </main>
+    </div>
+  </div>
+}

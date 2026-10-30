@@ -1,0 +1,25 @@
+<header class="page-heading"><div><h1>Make it yours</h1><p class="muted">Your targets, your routine, your data.</p></div></header>
+<div class="settings-grid">
+  <section class="panel"><h2>Daily targets</h2><p class="muted">Same targets each day until you change them. New targets start today, {{ store.today() }}. Earlier days retain their goals.</p>
+    <form [formGroup]="goals" (ngSubmit)="saveGoals()"><div class="form-grid">@for (key of nutrients; track key) { <label class="capitalize">{{ key }} ({{ key === 'calories' ? 'kcal' : 'g' }})<input [formControlName]="key" type="number" step="any" min="0.01" required /></label> }</div>
+    <p class="small-note">Macros provide approximately {{ macroCalories() | number:'1.0-0' }} kcal (protein/carbs: 4 kcal/g; fat: 9 kcal/g).</p>
+    @if (mismatch()) { <p class="callout" role="status">Your calorie and macro targets don't line up. You can save them as entered; we won't rewrite them.</p> }
+    @if (attempted && goals.invalid) { <p class="error" role="alert">All targets must be greater than zero.</p> }
+    <button class="primary" type="submit">Save daily targets</button></form>
+  </section>
+  <section class="panel"><h2>Your meal sections</h2><p class="muted">Rename, reorder, or hide defaults for tomorrow onward. Existing diaries keep their sections.</p>
+    <form [formGroup]="sectionForm" (ngSubmit)="saveSections()"><div formArrayName="sections">@for (section of sectionForm.controls.sections.controls; track section; let i = $index) {
+      <div [formGroupName]="i" class="section-setting"><label><span class="sr-only">Section {{ i + 1 }} name</span><input formControlName="name" required maxlength="50" /></label><label class="checkbox"><input type="checkbox" formControlName="visible" /> Visible</label>
+      <button type="button" [disabled]="i === 0" [attr.aria-label]="'Move section ' + (i + 1) + ' up'" (click)="move(i, -1)">&#8593;</button><button type="button" [disabled]="i === sectionForm.controls.sections.length - 1" [attr.aria-label]="'Move section ' + (i + 1) + ' down'" (click)="move(i, 1)">&#8595;</button></div>
+    }</div><div class="actions"><button type="button" (click)="addSection()">+ Add section</button><button type="submit" class="primary">Save meal sections</button></div></form>
+  </section>
+  <section class="panel"><h2>Dates & measurements</h2><form (submit)="$event.preventDefault(); saveZone()"><label>Diary time zone<input [formControl]="zone" list="time-zones" required /></label><datalist id="time-zones"><option value="America/Los_Angeles"></option><option value="America/New_York"></option><option value="Europe/London"></option><option value="UTC"></option></datalist><p class="small-note">An IANA time zone, initially suggested by your browser. Mobile and desktop will use this same setting.</p><button type="submit">Save time zone</button></form>
+    <label class="spaced">Weight display<select #unit [value]="store.weightUnit()" (change)="store.weightUnit.set(unit.value === 'kg' ? 'kg' : 'lb')"><option value="lb">Pounds (lb)</option><option value="kg">Kilograms (kg)</option></select></label><p class="small-note">Changing units doesn't change your stored measurements.</p>
+  </section>
+  <section class="panel"><h2>Private by design</h2><p class="muted">Production access is intended for one authorized Google account only. The backend must enforce this restriction.</p><p class="small-note">This prototype doesn't contact Google, a food database, or Azure. Photos are illustrations. Nothing is persisted.</p>
+    <h3>Your data controls</h3><div class="actions"><button type="button" (click)="exportData()">Preview demo export</button><button type="button" class="danger" (click)="confirmDelete.set(true)">Delete all demo data</button></div>
+    @if (exported()) { <details open><summary>Fictional export preview</summary><pre class="export-preview" tabindex="0">{{ exported() }}</pre><button type="button" (click)="exported.set('')">Close export preview</button></details> }
+    @if (confirmDelete()) { <div class="confirmation"><h3>Delete all demo data?</h3><p>This removes diary entries, foods, recipes, goals, weights, and attached sample photos. Reset demo can restore the examples.</p><label>Type DELETE to confirm<input [formControl]="deleteText" autocomplete="off" /></label><div class="actions"><button type="button" class="danger" (click)="clear()">Confirm deletion</button><button type="button" (click)="confirmDelete.set(false)">Cancel</button></div></div> }
+  </section>
+</div>
+<section class="demo-tools panel"><h2>Prototype controls</h2><p class="muted">Try the edge cases before connecting real services. Refreshing or resetting restores all sample data.</p><div class="actions"><button type="button" [attr.aria-pressed]="store.failNext()" (click)="store.failNext.set(!store.failNext())">{{ store.failNext() ? 'Next save will fail — click to cancel' : 'Simulate next save failing' }}</button><button type="button" (click)="resetDemo.emit()">Reset demo</button></div></section>
