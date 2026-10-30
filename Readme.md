@@ -49,6 +49,14 @@ azd up
 
 `azd init` auto-generates the Azure infrastructure from the Aspire AppHost. `azd up` provisions and deploys everything.
 
+## CI
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every PR to `main` and every push to `main`:
+
+- **web** — `npm ci`, `ng build`, `ng test` in `Dao.Maxxing.Web`
+- **dotnet** — restore, build, and test `Dao.Maxxing.slnx` on .NET 10
+- **container** — publishes the API container with the Angular build in `wwwroot`, runs it, and checks `/health`, `/alive`, and that `/` serves the app
+
 ## API Endpoints
 
 - `GET /api/weatherforecast` — Returns 5-day weather forecast data
