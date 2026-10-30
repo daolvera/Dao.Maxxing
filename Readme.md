@@ -5,9 +5,14 @@ A .NET Aspire template with an Angular frontend and C# API, ready for cloud depl
 ## Project Structure
 
 - **Dao.Maxxing.AppHost** — Aspire orchestrator that wires the API and Angular frontend together
-- **Dao.Maxxing.Api** — ASP.NET Core API with a weather forecast endpoint
-- **Dao.Maxxing.Web** — Angular frontend that displays weather data from the API
+- **Dao.Maxxing.Api** — ASP.NET Core host: auth, endpoint mapping (`Endpoints/`), ProblemDetails error handling; serves the Angular build in production
+- **Dao.Maxxing.Services** — implementations of Core interfaces, validated `IOptions` settings, and DI registration (`AddMaxxingServices`)
+- **Dao.Maxxing.Core** — domain types and service interfaces, no dependencies
+- **Dao.Maxxing.Web** — Angular frontend
 - **Dao.Maxxing.ServiceDefaults** — Shared Aspire service configuration (health checks, OpenTelemetry, resilience)
+- **tests/** — `Dao.Maxxing.Services.Tests` (unit) and `Dao.Maxxing.Api.Tests` (in-process integration)
+
+Backend conventions (layering, DI, `IOptions` validation, errors, logging, tests) are in [AGENTS.md](AGENTS.md); coding agents load it automatically.
 
 ## Architecture
 
