@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: web
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Dao.Maxxing.Web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: Dao.Maxxing.Web/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npx ng build
+      - run: npx ng test --watch=false
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: Dao.Maxxing.Web/dist/
+          if-no-files-found: error
+          retention-days: 3
+
+  dotnet:
+    name: dotnet
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet restore Dao.Maxxing.slnx
+      - run: dotnet build Dao.Maxxing.slnx -c Release --no-restore
+      - run: dotnet test Dao.Maxxing.slnx -c Release --no-build
+
+  container:
+    name: container
+    runs-on: ubuntu-latest
+    needs: [web, dotnet]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      # Mirrors PublishWithContainerFiles in the AppHost: the API image serves the Angular build.
+      - uses: actions/download-artifact@v4
+        with:
+          name: web-dist
+          path: Dao.Maxxing.Api/wwwroot
+      - name: Publish API container
+        run: >
+          dotnet publish Dao.Maxxing.Api -c Release -t:PublishContainer
+          -p:ContainerRepository=dao-maxxing-api -p:ContainerImageTag=ci
+      - name: Run container
+        # Dummy values satisfy startup validation; no real sign-in happens in CI.
+        run: >
+          docker run -d --name api -p 8080:8080
+          -e ASPNETCORE_ENVIRONMENT=Production
+          -e Authentication__PublicOrigin=https://localhost
+          -e Authentication__Google__ClientId=ci-dummy
+          -e Authentication__Google__ClientSecret=ci-dummy
+          dao-maxxing-api:ci
+      - name: Check health and SPA
+        run: |
+          for i in $(seq 1 30); do
+            curl -fsS http://localhost:8080/health && break
+            sleep 2
+          done
+          curl -fsS http://localhost:8080/health
+          curl -fsS http://localhost:8080/alive
+          curl -fsS http://localhost:8080/ | grep -q '<app-root'
+      - name: Container logs
+        if: always()
+        run: docker logs api
