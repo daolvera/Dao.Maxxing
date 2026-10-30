@@ -1,0 +1,78 @@
+<header class="page-heading">
+  <div><h1>Your daily diary</h1><p class="muted">A little less tracking. A little more living.</p></div>
+  <button class="primary" type="button" (click)="open(store.day().sections[0])"><mx-icon name="plus" /> Add food</button>
+</header>
+<div class="date-toolbar">
+  <div class="date-navigation">
+    <button type="button" aria-label="Previous day" (click)="step(-1)">&#8592;</button>
+    <label class="sr-only" for="diary-date">Diary date</label>
+    <input id="diary-date" #diaryDate type="date" [value]="store.date()" (change)="store.selectDate(diaryDate.value); close()" />
+    <button type="button" aria-label="Next day" (click)="step(1)">&#8594;</button>
+    <button type="button" class="text-button" (click)="store.selectDate(store.today()); close()">Today</button>
+  </div>
+  <span class="status-chip" [class.complete]="store.day().complete">{{ store.day().complete ? 'Complete' : store.day().entries.length ? 'In progress' : 'Not logged' }}</span>
+</div>
+<div class="diary-layout">
+  <div class="diary-main">
+    <section class="summary panel" aria-label="Daily nutrition">
+      <div class="section-heading"><h2>{{ store.date() === store.today() ? "Today's" : 'Daily' }} nutrition</h2><span class="muted">Consumed / target</span></div>
+      <div class="macro-grid">
+        @for (key of nutrients; track key) {
+          <div class="macro" [class]="key">
+            <h3>{{ key === 'calories' ? 'Calories' : key === 'protein' ? 'Protein' : key === 'carbs' ? 'Carbs' : 'Fat' }}</h3>
+            <p class="macro-value">{{ store.total()[key] | number:'1.0-0' }}<span> / {{ store.target()[key] | number:'1.0-0' }}{{ key === 'calories' ? '' : ' g' }}</span></p>
+            <div class="meter" role="progressbar" [attr.aria-label]="key + ' consumed'" [attr.aria-valuenow]="meterValue(key)" [attr.aria-valuemin]="0" [attr.aria-valuemax]="store.target()[key] || 1" [attr.aria-valuetext]="(store.total()[key] | number:'1.0-0') + ' consumed of ' + store.target()[key]"><span [style.transform]="'scaleX(' + percent(key) / 100 + ')'"></span></div>
+            <small>{{ absolute(remaining(key)) | number:'1.0-0' }}{{ key === 'calories' ? ' kcal' : ' g' }} {{ remaining(key) < 0 ? 'over target' : 'remaining' }}</small>
+          </div>
+        }
+      </div>
+    </section>
+    @if (picker(); as section) { <mx-food-picker [section]="section" [entry]="editing()" [initialCollection]="quickCollection()" (closed)="close()" /> }
+    @for (section of store.day().sections; track section; let i = $index) {
+      <section class="meal panel">
+        <div class="section-heading">
+          <div class="meal-title"><span class="meal-symbol" aria-hidden="true">{{ i === 0 ? '&#9728;' : i === 1 ? '&#9680;' : i === 2 ? '&#9790;' : '&#9671;' }}</span><h2>{{ section }}</h2></div>
+          <span class="meal-total">{{ mealCalories(section) | number:'1.0-0' }} <small>kcal</small></span>
+        </div>
+        @for (entry of entries(section); track entry.id) {
+          <div class="diary-row">
+            <button type="button" class="entry-name" (click)="open(section, entry)"><strong>{{ entry.name }}</strong><small>{{ entry.quantity | number:'1.0-2' }} {{ entry.unit === 'g' ? 'g' : 'serving(s)' }} · {{ entry.serving }}</small></button>
+            <div class="entry-nutrition"><span>{{ entry.calories | number:'1.0-0' }} <small>kcal</small></span><small>P {{ entry.protein | number:'1.0-0' }} · C {{ entry.carbs | number:'1.0-0' }} · F {{ entry.fat | number:'1.0-0' }}</small></div>
+            <button class="icon-button" type="button" [attr.aria-label]="'Delete ' + entry.name" (click)="deleting.set(entry.id)">&#215;</button>
+          </div>
+          @if (deleting() === entry.id) {
+            <div class="confirmation"><p>Remove {{ entry.name }} from this day?</p><button type="button" class="danger" (click)="deleteEntry(entry.id)">Delete entry</button><button type="button" (click)="deleting.set(null)">Cancel</button></div>
+          }
+        } @empty { <p class="empty-meal">Nothing logged yet. Add something whenever you're ready.</p> }
+        <div class="meal-footer">
+          <button type="button" class="text-button" (click)="open(section)"><mx-icon name="plus" /> Add food<span class="sr-only"> to {{ section }}</span></button>
+          <details><summary>Meal actions<span class="sr-only"> for {{ section }}</span></summary><div class="actions">
+            <button type="button" (click)="saveMeal(section)" [disabled]="!entries(section).length">Save as meal</button>
+            <button type="button" (click)="copy.set(section)" [disabled]="!entries(section).length">Copy to date</button>
+            <button type="button" (click)="removeSection(section)">Remove section</button>
+          </div></details>
+        </div>
+        @if (copy() === section) {
+          <div class="inline-editor"><h3>Copy {{ section }}</h3><label>Destination date<input type="date" [formControl]="destination" /></label><p class="muted">Adds these foods without replacing existing entries.</p><div class="actions"><button type="button" (click)="copyMeal()">Copy meal</button><button type="button" (click)="copy.set(null)">Cancel</button></div></div>
+        }
+      </section>
+    }
+    <div class="completion panel">
+      <div><h2>{{ store.day().complete ? 'This day is complete' : 'Finished logging for this day?' }}</h2><p class="muted">Completed days count toward weekly averages. Editing food marks the day incomplete.</p></div>
+      <button type="button" [attr.aria-pressed]="store.day().complete" (click)="complete()">{{ store.day().complete ? 'Mark incomplete' : 'Mark day complete' }}</button>
+    </div>
+  </div>
+  <aside class="diary-aside">
+    <section class="quick-meals panel">
+      <h2>Make it a regular</h2><p class="muted">Your familiar meals, without the extra steps.</p>
+      @for (meal of store.collections(); track meal.id) {
+        @if (meal.kind === 'meal') {
+          <h3>{{ meal.name }}</h3><p class="muted">{{ meal.ingredients.length }} foods, saved together</p>
+          <button type="button" (click)="open(store.day().sections[0], null, meal)">Choose meal & portion <mx-icon name="arrow" /></button>
+        }
+      }
+      <p class="small-note">Find saved meals in Add food. Every logged portion can be adjusted independently.</p>
+    </section>
+    <section class="gentle-note"><mx-icon name="leaf" /><h2>A snapshot, not a score.</h2><p>Your diary is here to help you notice patterns. Every day can look different.</p></section>
+  </aside>
+</div>

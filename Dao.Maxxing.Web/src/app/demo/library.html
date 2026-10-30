@@ -1,0 +1,43 @@
+<header class="page-heading"><div><h1>Foods & recipes</h1><p class="muted">Build a little library of the things you love.</p></div><div class="actions"><button type="button" (click)="editFood(null)">Create food</button><button type="button" class="primary" (click)="editCollection(null)"><mx-icon name="plus" /> Create meal or recipe</button></div></header>
+@if (foodEditor()) { <section class="panel"><mx-food-editor [food]="editingFood()" (saved)="foodEditor.set(false); tab.set('Foods')" (cancel)="foodEditor.set(false)" /></section> }
+@if (builder()) {
+  <section class="panel"><form [formGroup]="collectionForm" (ngSubmit)="saveCollection()">
+    <h2>{{ editingCollection() ? 'Edit' : 'Create' }} a meal or recipe</h2><p class="muted">Ingredient nutrition is added together. Existing diary entries keep their original values.</p>
+    <div class="form-grid"><label>Name<input formControlName="name" required maxlength="100" /></label><label>Type<select formControlName="kind"><option value="recipe">Recipe</option><option value="meal">Saved meal</option></select></label></div>
+    <h3>Ingredients</h3>
+    <div formArrayName="ingredients">
+      @for (group of collectionForm.controls.ingredients.controls; track group; let i = $index) {
+        <div [formGroupName]="i" class="ingredient-row">
+          <label>Food<select formControlName="foodId">@for (food of ingredientOptions(); track food.id) { <option [value]="food.id">{{ food.name }} ({{ food.serving }})</option> }</select></label>
+          <label>Servings<input formControlName="servings" type="number" min="0.001" step="any" required /></label>
+          <button type="button" [attr.aria-label]="'Remove ingredient ' + (i + 1)" (click)="removeIngredient(i)">Remove</button>
+        </div>
+      }
+    </div>
+    <button type="button" (click)="addIngredient()" [disabled]="!store.foods().length">+ Add ingredient</button>
+    @if (!store.foods().length) { <p class="callout">Create a food before building a meal or recipe.</p> }
+    @if (values().kind === 'recipe') {
+      <div class="form-grid spaced"><label>Total servings<input formControlName="servings" type="number" min="0.001" step="any" required /></label><label>Final cooked weight (g, optional)<input formControlName="cookedGrams" type="number" min="0.001" step="any" /></label></div>
+      <p class="small-note">Weigh the finished recipe if you want to log portions in grams. We never guess water loss or cooked weight.</p>
+    }
+    <p class="nutrition-preview"><strong>{{ preview().calories | number:'1.0-0' }} kcal</strong><span>P {{ preview().protein | number:'1.0-1' }} g</span><span>C {{ preview().carbs | number:'1.0-1' }} g</span><span>F {{ preview().fat | number:'1.0-1' }} g</span><span>per {{ values().kind === 'recipe' ? 'serving' : 'whole meal' }}</span></p>
+    @if (attempted && (collectionForm.invalid || !collectionForm.controls.ingredients.length)) { <p class="error" role="alert">Enter a name, positive quantities, and at least one ingredient. Recipes need a positive serving count.</p> }
+    <div class="actions"><button type="submit" class="primary">Save {{ values().kind }}</button><button type="button" (click)="builder.set(false)">Cancel</button></div>
+  </form></section>
+}
+<section class="panel">
+  <div class="tabs">@for (t of tabs; track t) { <button type="button" [class.active]="tab() === t" [attr.aria-pressed]="tab() === t" (click)="tab.set(t)">{{ t }}</button> }</div>
+  <label class="search">Search your library<input type="search" [formControl]="search" placeholder="Find a familiar favorite..." /></label>
+  @if (tab() === 'Foods') {
+    @for (food of filteredFoods(); track food.id) {
+      <div class="library-row"><div><h3>{{ food.name }}</h3><p class="muted">{{ food.serving }} · {{ food.calories | number:'1.0-0' }} kcal</p></div><div class="actions"><button type="button" [attr.aria-pressed]="food.favorite" (click)="store.favorite(food.id)">{{ food.favorite ? 'Favorited' : 'Favorite' }}<span class="sr-only"> {{ food.name }}</span></button><button type="button" (click)="editFood(food)">Edit<span class="sr-only"> {{ food.name }}</span></button></div></div>
+    } @empty { <p class="empty">No foods found. Create a private food from its label.</p> }
+  } @else {
+    @for (c of filteredCollections(); track c.id) {
+      <div class="library-row"><div><span class="recipe-mark"><mx-icon name="food" /></span><h3>{{ c.name }}</h3><p class="muted">{{ c.ingredients.length }} ingredients · {{ nutrition(c).calories | number:'1.0-0' }} kcal / {{ c.kind === 'recipe' ? 'serving' : 'meal' }}</p>
+      @if (c.kind === 'recipe') { <p class="small-note">{{ c.servings }} servings{{ c.cookedGrams ? ' · ' + c.cookedGrams + ' g cooked' : ' · No gram conversion set' }}</p> }</div>
+      <div class="actions"><button type="button" (click)="editCollection(c)">Edit<span class="sr-only"> {{ c.name }}</span></button><button type="button" (click)="log(c)">Log in diary<span class="sr-only">: {{ c.name }}</span></button></div></div>
+    } @empty { <p class="empty">Nothing saved here yet. Create a meal or recipe to make logging easier.</p> }
+  }
+</section>
+@if (picker()) { <mx-food-picker [section]="store.day().sections[0]" [initialCollection]="loggingCollection()" (closed)="picker.set(false)" /> }

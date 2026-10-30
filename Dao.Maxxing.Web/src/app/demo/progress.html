@@ -1,0 +1,55 @@
+<header class="page-heading"><div><h1>Your progress</h1><p class="muted">Notice the patterns. Keep the bigger picture.</p></div><button type="button" class="primary" (click)="start()">+ Record weight</button></header>
+<section class="panel">
+  <div class="section-heading"><h2>Weekly nutrition</h2><label>Week ending<input #weekEnd type="date" [value]="store.date()" (change)="store.selectDate(weekEnd.value)" /></label></div>
+  <p class="muted">Averages include {{ store.completedDays().length }} completed {{ store.completedDays().length === 1 ? 'day' : 'days' }} only. Partial days and missing logs are excluded.</p>
+  @if (store.average(); as average) {
+    <div class="average-grid">@for (key of nutrients; track key) { <div><span class="capitalize">{{ key }}</span><strong>{{ average[key] | number:'1.0-0' }} <small>{{ key === 'calories' ? 'kcal' : 'g' }}</small></strong></div> }</div>
+  } @else { <p class="empty">No completed days in this week. Mark a diary day complete to see an average.</p> }
+  <div class="week-chart" aria-label="Daily calories and logging status">
+    @for (day of store.week(); track day.date) {
+      <div class="week-column">
+        <span>{{ day.entries.length || day.complete ? (sum(day.entries).calories | number:'1.0-0') : '—' }}</span>
+        <div class="bar-track"><div class="week-bar" [class.partial]="!day.complete" [style.height.%]="bar(day.date)"></div></div>
+        <strong>{{ day.date | date:'EEE':'UTC' }}</strong><small>{{ day.date | date:'MMM d':'UTC' }}</small>
+        <span class="chart-status">{{ day.complete ? 'Complete' : day.entries.length ? 'Partial' : 'No data' }}</span>
+      </div>
+    }
+  </div>
+  <details class="spaced-details"><summary>View daily macro totals</summary><div class="table-scroll"><table><caption class="sr-only">Weekly nutrition totals</caption><thead><tr><th>Date</th><th>Status</th><th>Calories</th><th>Protein</th><th>Carbs</th><th>Fat</th></tr></thead><tbody>@for (d of store.week(); track d.date) { <tr><th>{{ d.date }}</th><td>{{ d.complete ? 'Complete' : d.entries.length ? 'Partial' : 'No data' }}</td>@for (key of nutrients; track key) { <td>{{ d.entries.length || d.complete ? (sum(d.entries)[key] | number:'1.0-1') : '—' }}</td> }</tr> }</tbody></table></div></details>
+</section>
+<section class="panel">
+  <div class="section-heading"><div><h2>Weight over time</h2><p class="muted">Your measurements, without a score.</p></div><div class="tabs unit-tabs"><button type="button" [class.active]="store.weightUnit() === 'lb'" [attr.aria-pressed]="store.weightUnit() === 'lb'" (click)="unit('lb')">lb</button><button type="button" [class.active]="store.weightUnit() === 'kg'" [attr.aria-pressed]="store.weightUnit() === 'kg'" (click)="unit('kg')">kg</button></div></div>
+  @if (formOpen()) {
+    <form class="inline-editor" [formGroup]="weightForm" (ngSubmit)="save()">
+      <h3>{{ editing() ? 'Edit weight entry' : 'Record a weight' }}</h3>
+      <div class="form-grid"><label>Date<input formControlName="date" type="date" required /></label><label>Weight ({{ store.weightUnit() }})<input formControlName="amount" type="number" min="0.01" step="any" required /></label></div>
+      <label class="checkbox"><input type="checkbox" formControlName="photo" /> Attach one sample photo</label><p class="small-note">Illustration only. No personal photo is uploaded or stored.</p>
+      @if (attempted && weightForm.invalid) { <p class="error" role="alert">Choose a date and enter a weight greater than zero.</p> }
+      <div class="actions"><button type="submit" class="primary">Save weight</button><button type="button" (click)="formOpen.set(false)">Cancel</button></div>
+    </form>
+  }
+  @if (store.weights().length) {
+    <svg class="weight-chart" viewBox="0 0 600 180" role="img" aria-label="Weight trend. Exact dates and weights are listed in the history below.">
+      <path d="M20 155H580M20 95H580M20 35H580" stroke="#dce4df" fill="none" />
+      <polyline [attr.points]="line()" fill="none" stroke="#058743" stroke-width="2.5" />
+      @for (p of points(); track p.w.date) { <circle [attr.cx]="p.x" [attr.cy]="p.y" r="4" fill="#058743" /><text [attr.x]="p.x" [attr.y]="p.y - 12" text-anchor="middle" fill="#344b3e" font-size="12">{{ store.displayWeight(p.w.kg) | number:'1.0-1' }}</text> }
+    </svg>
+    <div class="chart-dates"><span>{{ store.weights()[0].date | date:'MMM d':'UTC' }}</span><span>{{ store.weights().at(-1)?.date | date:'MMM d':'UTC' }}</span></div>
+    @for (weight of reversedWeights(); track weight.date) {
+      <div class="weight-row"><div><strong>{{ weight.date | date:'MMM d, yyyy':'UTC' }}</strong><small>{{ weight.photo ? '1 sample photo attached' : 'No photo' }}</small></div><strong>{{ store.displayWeight(weight.kg) | number:'1.0-1' }} {{ store.weightUnit() }}</strong><div class="actions"><button type="button" (click)="start(weight)">Edit<span class="sr-only"> weight on {{ weight.date }}</span></button><button type="button" (click)="deleting.set(weight.date)">Delete<span class="sr-only"> weight on {{ weight.date }}</span></button></div></div>
+      @if (deleting() === weight.date) { <div class="confirmation"><p>Delete this weight and its attached photo? This cannot be undone within the demo.</p><button type="button" class="danger" (click)="remove(weight.date)">Delete weight & photo</button><button type="button" (click)="deleting.set(null)">Cancel</button></div> }
+    }
+  } @else { <p class="empty">No weights recorded yet. Start whenever you're ready.</p> }
+</section>
+<section class="panel">
+  <div class="section-heading"><div><h2>A side-by-side perspective</h2><p class="muted">Compare two dated photos, privately and without analysis.</p></div></div>
+  @if (photos().length >= 2) {
+    <div class="comparison">
+      <div><label>First photo<select [formControl]="first"><option value="">Choose a photo</option>@for (w of photos(); track w.date) { <option [value]="w.date">{{ w.date }}</option> }</select></label>
+      @if (selectedPhoto(first.value); as w) { <mx-photo /><p><strong>{{ w.date | date:'MMM d, yyyy':'UTC' }}</strong> · {{ store.displayWeight(w.kg) | number:'1.0-1' }} {{ store.weightUnit() }}</p> }</div>
+      <div><label>Second photo<select [formControl]="second"><option value="">Choose a photo</option>@for (w of photos(); track w.date) { <option [value]="w.date" [disabled]="w.date === first.value">{{ w.date }}</option> }</select></label>
+      @if (selectedPhoto(second.value); as w) { <mx-photo [alternate]="true" /><p><strong>{{ w.date | date:'MMM d, yyyy':'UTC' }}</strong> · {{ store.displayWeight(w.kg) | number:'1.0-1' }} {{ store.weightUnit() }}</p> }</div>
+    </div>
+    @if (first.value === second.value) { <p class="error" role="alert">Choose two different dates for a comparison.</p> }
+  } @else { <p class="empty">Attach sample photos to at least two weight entries to compare them.</p> }
+</section>
