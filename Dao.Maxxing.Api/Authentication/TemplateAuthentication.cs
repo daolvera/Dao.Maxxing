@@ -2,7 +2,9 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.Options;
 
 namespace Dao.Maxxing.Api.Authentication;
 
@@ -12,15 +14,12 @@ public static class TemplateAuthentication
 
     public static void AddTemplateAuthentication(this WebApplicationBuilder builder)
     {
-        var origin = builder.Configuration["Authentication:PublicOrigin"]
-            ?? (builder.Environment.IsDevelopment() ? "https://localhost:4200" : null);
-        if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri) ||
-            uri.Scheme != "https" || uri.AbsolutePath != "/" || !string.IsNullOrEmpty(uri.Query) ||
-            !string.IsNullOrEmpty(uri.Fragment) || !string.IsNullOrEmpty(uri.UserInfo))
-        {
-            throw new InvalidOperationException("Set Authentication:PublicOrigin to the public HTTPS origin (without a path). See docs/authentication.md.");
-        }
-        builder.Services.AddSingleton(new PublicOrigin(uri.GetLeftPart(UriPartial.Authority)));
+        builder.Services.AddSingleton<IValidateOptions<AuthenticationSettings>, AuthenticationSettingsValidator>();
+        builder.Services.AddOptions<AuthenticationSettings>()
+            .Bind(builder.Configuration.GetSection(AuthenticationSettings.SectionName))
+            .ValidateOnStart();
+        builder.Services.AddSingleton(sp =>
+            new PublicOrigin(sp.GetRequiredService<IOptions<AuthenticationSettings>>().Value.PublicOriginAuthority));
         builder.Services.Configure<ForwardedHeadersOptions>(options =>
         {
             options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
@@ -33,18 +32,10 @@ public static class TemplateAuthentication
             options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
         });
 
-        var clientId = builder.Configuration["Authentication:Google:ClientId"];
-        var clientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
-        if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
-        {
-            throw new InvalidOperationException("Set Authentication:Google:ClientId and ClientSecret using user secrets or deployment secrets. See docs/authentication.md.");
-        }
         builder.Services.AddAuthentication(SessionScheme)
             .AddCookie(SessionScheme, ConfigureSessionCookie)
             .AddGoogle(options =>
             {
-                options.ClientId = clientId;
-                options.ClientSecret = clientSecret;
                 options.SignInScheme = SessionScheme;
                 options.Events.OnRemoteFailure = context =>
                 {
@@ -54,6 +45,12 @@ public static class TemplateAuthentication
                     context.HandleResponse();
                     return Task.CompletedTask;
                 };
+            });
+        builder.Services.AddOptions<GoogleOptions>(GoogleDefaults.AuthenticationScheme)
+            .Configure<IOptions<AuthenticationSettings>>((options, settings) =>
+            {
+                options.ClientId = settings.Value.Google.ClientId!;
+                options.ClientSecret = settings.Value.Google.ClientSecret!;
             });
         builder.Services.AddAuthorizationBuilder().AddPolicy("api", policy =>
             policy.AddAuthenticationSchemes(SessionScheme).RequireAuthenticatedUser());
@@ -142,8 +139,10 @@ public static class TemplateAuthentication
         {
             context.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("Antiforgery")
                 .LogWarning(exception, "Rejected request with an invalid antiforgery token.");
-            context.Response.StatusCode = StatusCodes.Status400BadRequest;
-            await context.Response.WriteAsJsonAsync(new { error = "Invalid antiforgery token. Reload the page and try again." });
+            await TypedResults.Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Invalid antiforgery token.",
+                detail: "Reload the page and try again.").ExecuteAsync(context);
             return false;
         }
     }

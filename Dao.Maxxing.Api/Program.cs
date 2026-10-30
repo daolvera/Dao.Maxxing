@@ -1,13 +1,19 @@
 using Dao.Maxxing.Api.Authentication;
+using Dao.Maxxing.Api.Endpoints;
+using Dao.Maxxing.Api.Errors;
+using Dao.Maxxing.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 builder.Services.AddOpenApi();
+builder.Services.AddApiProblemDetails();
+builder.Services.AddMaxxingServices(builder.Configuration);
 builder.AddTemplateAuthentication();
 
 
 var app = builder.Build();
+app.UseApiProblemDetails();
 await app.InitializeTemplateAuthenticationAsync();
 app.UseForwardedHeaders();
 
@@ -23,35 +29,10 @@ app.UseAuthorization();
 app.MapTemplateAuthentication();
 
 app.MapDefaultEndpoints();
-
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/api/weatherforecast", () =>
-{
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.RequireAuthorization("api")
-.WithName("GetWeatherForecast");
-
+app.MapWeatherEndpoints();
 
 app.MapFallbackToFile("index.html");
 
 app.Run();
-
-internal record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
 
 public partial class Program;

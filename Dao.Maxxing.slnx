@@ -1,5 +1,11 @@
 <Solution>
   <Project Path="Dao.Maxxing.Api/Dao.Maxxing.Api.csproj" />
   <Project Path="Dao.Maxxing.AppHost/Dao.Maxxing.AppHost.csproj" />
+  <Project Path="Dao.Maxxing.Core/Dao.Maxxing.Core.csproj" />
   <Project Path="Dao.Maxxing.ServiceDefaults/Dao.Maxxing.ServiceDefaults.csproj" />
+  <Project Path="Dao.Maxxing.Services/Dao.Maxxing.Services.csproj" />
+  <Folder Name="/tests/">
+    <Project Path="tests/Dao.Maxxing.Api.Tests/Dao.Maxxing.Api.Tests.csproj" />
+    <Project Path="tests/Dao.Maxxing.Services.Tests/Dao.Maxxing.Services.Tests.csproj" />
+  </Folder>
 </Solution>
