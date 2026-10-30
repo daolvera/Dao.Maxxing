@@ -46,7 +46,9 @@ step below. The examples use `Foods`; substitute the feature's name.
      return ProblemDetails.
    - Swap outbound providers with fakes via `factory.ConfigureServices`. Tests
      never call real external APIs.
-7. **Verify.**
+7. **Verify.** The build treats warnings as errors. It also fails with
+   RS0030 on any API listed in `BannedSymbols.txt`, and `ConventionTests` fails
+   on direct configuration reads. Fix the cause. Never suppress the error.
 
    ```bash
    dotnet build Dao.Maxxing.slnx -c Release && dotnet test Dao.Maxxing.slnx -c Release --no-build
@@ -55,8 +57,11 @@ step below. The examples use `Foods`; substitute the feature's name.
 ## Before finishing, check that
 
 - [ ] Nothing in Core references Services, Api, or any package.
-- [ ] No `IConfiguration["..."]`, `DateTime.Now`, `new SomeService(...)`, or
-      `GetService` calls in app code.
+- [ ] No `new SomeService(...)` or service-locator `GetService` calls in app
+      code. The banned APIs and configuration reads are already enforced by
+      the build and tests.
+- [ ] No new `NoWarn`, `#pragma warning disable`, or `[SuppressMessage]`
+      without a justification comment.
 - [ ] Every new options class validates on start and has a validation test.
 - [ ] Every error path returns ProblemDetails.
 - [ ] No secrets or personal data appear in logs or committed config.

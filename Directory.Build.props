@@ -1,0 +1,18 @@
+<Project>
+
+  <PropertyGroup>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- Vulnerable-package advisories stay visible but don't break unrelated builds the day one is published. -->
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
+  </PropertyGroup>
+
+  <!--
+    Enforces AGENTS.md conventions at compile time (RS0030) for app and test code.
+    AppHost and ServiceDefaults are Aspire infrastructure and read configuration directly by design.
+  -->
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'Dao.Maxxing.AppHost' and '$(MSBuildProjectName)' != 'Dao.Maxxing.ServiceDefaults'">
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="5.6.0" PrivateAssets="all" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.txt" />
+  </ItemGroup>
+
+</Project>

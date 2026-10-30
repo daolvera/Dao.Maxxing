@@ -120,6 +120,32 @@ project. Don't use technical folders like `Models/` or `Interfaces/`.
   dotnet build Dao.Maxxing.slnx -c Release && dotnet test Dao.Maxxing.slnx -c Release --no-build
   ```
 
+## Build enforcement
+
+These rules are enforced by the build and tests, not just by this file:
+
+- **Warnings as errors.** `Directory.Build.props` sets `TreatWarningsAsErrors`
+  for every project. Fix the warning. Don't add `NoWarn` or `#pragma warning
+  disable` unless there is a justification comment. NuGet vulnerability
+  advisories (NU1901–NU1904) stay warnings so a new advisory doesn't break
+  unrelated builds. Upgrade the package instead of ignoring them.
+- **Banned APIs (RS0030).** [BannedSymbols.txt](BannedSymbols.txt) is checked
+  by `Microsoft.CodeAnalysis.BannedApiAnalyzers` in Api, Services, Core, and
+  tests. It bans:
+  - `DateTime.Now`, `DateTime.UtcNow`, `DateTime.Today`, `DateTimeOffset.Now`,
+    and `DateTimeOffset.UtcNow`. Use `TimeProvider` instead.
+  - `ConfigurationBinder.GetValue` and `Environment.GetEnvironmentVariable`.
+    Use `IOptions` instead.
+  - `Console`. Use `ILogger` instead.
+
+  When you add a convention that can be expressed as a symbol, add it there
+  with a message pointing to this file.
+- **Convention tests.** `tests/Dao.Maxxing.Api.Tests/ConventionTests.cs`
+  covers rules the analyzer can't see. For example, the analyzer misses indexer
+  access, so `configuration["Key"]` is caught there.
+- **Infrastructure exemption.** AppHost and ServiceDefaults are exempt from the
+  banned list because they are Aspire infrastructure.
+
 ## Workflow
 
 - Work comes from the GitHub project "Dao.Maxxing Roadmap", taken in its
