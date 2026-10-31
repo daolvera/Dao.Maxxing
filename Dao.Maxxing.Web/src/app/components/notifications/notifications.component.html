@@ -1,0 +1,25 @@
+<div class="toast-container position-fixed top-0 end-0 p-3">
+  @for (notification of notifications(); track notification.id) {
+    <div
+      class="toast show align-items-center border-0 {{ getToastClass(notification.type) }}"
+      [attr.role]="notification.type === 'error' ? 'alert' : 'status'"
+      aria-atomic="true"
+    >
+      <div class="d-flex">
+        <div class="toast-body">
+          <i class="bi bi-{{ getIcon(notification.type) }} me-2" aria-hidden="true"></i>
+          {{ notification.message }}
+        </div>
+        @if (notification.dismissible) {
+          <button
+            type="button"
+            class="btn-close me-2 m-auto"
+            [class.btn-close-white]="hasDarkBackground(notification.type)"
+            aria-label="Close"
+            (click)="dismiss(notification)"
+          ></button>
+        }
+      </div>
+    </div>
+  }
+</div>

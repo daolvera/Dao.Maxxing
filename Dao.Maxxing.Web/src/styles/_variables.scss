@@ -1,0 +1,14 @@
+// Bootstrap variable overrides. Only list values that differ from Bootstrap's defaults
+// (https://github.com/twbs/bootstrap/blob/v5.3.8/scss/_variables.scss).
+
+// Maxxing green from the UI mock
+$primary: #058743;
+
+$font-family-sans-serif:
+  'Segoe UI',
+  -apple-system,
+  BlinkMacSystemFont,
+  Roboto,
+  'Helvetica Neue',
+  Arial,
+  sans-serif;

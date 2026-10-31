@@ -1,12 +1,7 @@
+// Prototype styles from the UI mock. Being replaced by Bootstrap classes; don't extend.
 @use './app/demo/content';
 
-/* Global styles */
-html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+// Bootstrap variable overrides (theme colors, font, radius). Customize Bootstrap here.
+@import 'styles/variables';
+
+@import 'bootstrap/scss/bootstrap';
