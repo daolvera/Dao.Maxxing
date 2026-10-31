@@ -22,12 +22,9 @@ import { WeatherForecast } from '../api/models';
           {{ error() }}
         </div>
       } @else {
-        <div class="table-responsive border rounded">
-          <table class="table table-hover align-middle mb-0">
-            <caption class="visually-hidden">
-              Five-day weather forecast
-            </caption>
-            <thead class="table-light">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0" aria-labelledby="weather-heading">
+            <thead>
               <tr>
                 <th scope="col">Date</th>
                 <th scope="col" class="text-end">Temp (°C)</th>
