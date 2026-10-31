@@ -1,7 +1,6 @@
-import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { Api } from '../api/api';
-import { getWeatherForecast } from '../api/functions';
-import { WeatherForecast } from '../api/models';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
+import { WeatherService } from './weather.service';
 
 @Component({
   selector: 'app-weather',
@@ -11,15 +10,15 @@ import { WeatherForecast } from '../api/models';
       <p class="small text-body-secondary mb-3">
         Live data from the C# API: <code>GET /api/weatherforecast</code>
       </p>
-      @if (loading()) {
+      @if (forecasts.isLoading()) {
         <div class="d-flex align-items-center gap-2 py-3" role="status">
           <span class="spinner-border spinner-border-sm text-primary" aria-hidden="true"></span>
           <span>Loading forecasts...</span>
         </div>
-      } @else if (error()) {
+      } @else if (forecasts.error()) {
         <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
           <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
-          {{ error() }}
+          Failed to load weather data. Is the API running?
         </div>
       } @else {
         <div class="table-responsive">
@@ -33,7 +32,7 @@ import { WeatherForecast } from '../api/models';
               </tr>
             </thead>
             <tbody>
-              @for (forecast of forecasts(); track forecast.date) {
+              @for (forecast of forecasts.value(); track forecast.date) {
                 <tr>
                   <td>{{ forecast.date }}</td>
                   <td class="text-end">{{ forecast.temperatureC }}</td>
@@ -49,23 +48,11 @@ import { WeatherForecast } from '../api/models';
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class WeatherComponent implements OnInit {
-  private readonly api = inject(Api);
+export class WeatherComponent {
+  private readonly weather = inject(WeatherService);
 
-  readonly forecasts = signal<WeatherForecast[]>([]);
-  readonly loading = signal(true);
-  readonly error = signal<string | null>(null);
-
-  ngOnInit(): void {
-    this.api.invoke(getWeatherForecast).subscribe({
-      next: (data) => {
-        this.forecasts.set(data);
-        this.loading.set(false);
-      },
-      error: () => {
-        this.error.set('Failed to load weather data. Is the API running?');
-        this.loading.set(false);
-      },
-    });
-  }
+  readonly forecasts = rxResource({
+    stream: () => this.weather.getForecast(),
+    defaultValue: [],
+  });
 }
