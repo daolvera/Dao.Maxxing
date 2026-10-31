@@ -1,109 +1,63 @@
 import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
-import { WeatherService, WeatherForecast } from './weather.service';
+import { Api } from '../api/api';
+import { getWeatherForecast } from '../api/functions';
+import { WeatherForecast } from '../api/models';
 
 @Component({
   selector: 'app-weather',
-  standalone: true,
   template: `
-    <section class="weather">
-      <h2>Weather Forecast</h2>
-      <p class="subtitle">Live data from the C# API — <code>GET /api/weatherforecast</code></p>
+    <section class="my-4" aria-labelledby="weather-heading">
+      <h2 id="weather-heading" class="h4 mb-1 text-primary-emphasis">Weather forecast</h2>
+      <p class="small text-body-secondary mb-3">
+        Live data from the C# API: <code>GET /api/weatherforecast</code>
+      </p>
       @if (loading()) {
-        <p class="loading">Loading forecasts...</p>
+        <div class="d-flex align-items-center gap-2 py-3" role="status">
+          <span class="spinner-border spinner-border-sm text-primary" aria-hidden="true"></span>
+          <span>Loading forecasts...</span>
+        </div>
       } @else if (error()) {
-        <p class="error">{{ error() }}</p>
+        <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+          <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+          {{ error() }}
+        </div>
       } @else {
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Temp (°C)</th>
-              <th>Temp (°F)</th>
-              <th>Summary</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (forecast of forecasts(); track forecast.date) {
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0" aria-labelledby="weather-heading">
+            <thead>
               <tr>
-                <td>{{ forecast.date }}</td>
-                <td>{{ forecast.temperatureC }}</td>
-                <td>{{ forecast.temperatureF }}</td>
-                <td>{{ forecast.summary }}</td>
+                <th scope="col">Date</th>
+                <th scope="col" class="text-end">Temp (°C)</th>
+                <th scope="col" class="text-end">Temp (°F)</th>
+                <th scope="col">Summary</th>
               </tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              @for (forecast of forecasts(); track forecast.date) {
+                <tr>
+                  <td>{{ forecast.date }}</td>
+                  <td class="text-end">{{ forecast.temperatureC }}</td>
+                  <td class="text-end">{{ forecast.temperatureF }}</td>
+                  <td>{{ forecast.summary }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
       }
     </section>
   `,
-  changeDetection: ChangeDetectionStrategy.Eager,
-  styles: `
-    .weather {
-      width: 100%;
-      max-width: 700px;
-      margin: 2rem auto;
-    }
-
-    h2 {
-      color: var(--accent, #058743);
-      font-size: 1.5rem;
-      margin-bottom: 0.25rem;
-    }
-
-    .subtitle {
-      color: #666;
-      font-size: 0.85rem;
-      margin-bottom: 1rem;
-    }
-
-    .subtitle code {
-      background: #f0f0f0;
-      padding: 0.1rem 0.4rem;
-      border-radius: 0.25rem;
-      font-size: 0.8rem;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.9rem;
-    }
-
-    th {
-      background: var(--accent, #058743);
-      color: #fff;
-      padding: 0.625rem 0.75rem;
-      text-align: left;
-    }
-
-    td {
-      padding: 0.5rem 0.75rem;
-      border-bottom: 1px solid #e0e0e0;
-    }
-
-    tr:hover td {
-      background: color-mix(in srgb, var(--accent, #058743) 8%, transparent);
-    }
-
-    .loading, .error {
-      text-align: center;
-      padding: 1rem;
-    }
-
-    .error {
-      color: #c62828;
-    }
-  `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WeatherComponent implements OnInit {
-  private readonly weatherService = inject(WeatherService);
+  private readonly api = inject(Api);
 
   readonly forecasts = signal<WeatherForecast[]>([]);
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
 
   ngOnInit(): void {
-    this.weatherService.getForecasts().subscribe({
+    this.api.invoke(getWeatherForecast).subscribe({
       next: (data) => {
         this.forecasts.set(data);
         this.loading.set(false);

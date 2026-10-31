@@ -29,6 +29,18 @@ jobs:
           cache: npm
           cache-dependency-path: Dao.Maxxing.Web/package-lock.json
       - run: npm ci --no-audit --no-fund
+      # The client is generated from the committed OpenAPI document (the dotnet job checks that
+      # document against the API). A generator failure fails this step; any difference fails the next.
+      - name: Generate API client
+        run: npm run generate:api
+      - name: Check generated API client is up to date
+        run: |
+          if [ -n "$(git status --porcelain -- src/app/api)" ]; then
+            git status --short -- src/app/api
+            git --no-pager diff -- src/app/api
+            echo "::error::src/app/api is out of date. Run 'npm run generate:api' in Dao.Maxxing.Web and commit the result."
+            exit 1
+          fi
       - run: npx ng build
       - run: npx ng test --watch=false
       - uses: actions/upload-artifact@v4
@@ -47,7 +59,16 @@ jobs:
         with:
           dotnet-version: 10.0.x
       - run: dotnet restore Dao.Maxxing.slnx
+      # Building the API also writes openapi/dao-maxxing-api.json, so a generator failure fails the build.
       - run: dotnet build Dao.Maxxing.slnx -c Release --no-restore
+      - name: Check OpenAPI document is up to date
+        run: |
+          if [ -n "$(git status --porcelain -- openapi)" ]; then
+            git status --short -- openapi
+            git --no-pager diff -- openapi
+            echo "::error::openapi/ is out of date. Build the solution, run 'npm run generate:api' in Dao.Maxxing.Web, and commit both."
+            exit 1
+          fi
       - run: dotnet test Dao.Maxxing.slnx -c Release --no-build
 
   container:

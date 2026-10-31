@@ -45,12 +45,19 @@ Angular Material, Tailwind, or any other UI kit or CSS framework.
   - **Sidenav:** a persistent `nav nav-pills flex-column` on desktop, and
     `NgbOffcanvas` on small screens.
   - **Loading:** `SpinnerService`, or `spinner-border` inline.
+  - **Form fields:** `<app-form-field>` with `appFieldControl` on the input
+    (`components/form-field`). It wires the label, hint, and validation
+    message to the control, so use it instead of a hand-written
+    `form-label` and `invalid-feedback`.
   - **Others:** dropdowns, tooltips, popovers, collapse, tabs, and the
     datepicker use their `Ngb*` components.
 - Theme Bootstrap through Sass variables in `src/styles/_variables.scss`, such
   as `$primary`, the font, and radii. At runtime, use `--bs-*` CSS variables.
   Never restyle Bootstrap's component classes by overriding them. Dark mode is
   Bootstrap's `data-bs-theme`, set by `ThemeService`.
+  - The one exception is `src/styles/_accessibility.scss`, for contrast fixes
+    that no Sass variable can reach. Keep it tiny and give each rule a WCAG
+    reason.
 - Icons are Bootstrap Icons: `<i class="bi bi-check-circle" aria-hidden="true"></i>`.
   Icon-only buttons need an `aria-label`.
 - Custom styles are a last resort, for when no class, utility, or variable can
@@ -99,6 +106,15 @@ Angular Material, Tailwind, or any other UI kit or CSS framework.
 - Use the async pipe to handle observables
 - Do not assume globals like (`new Date()`) are available.
 - Do not write arrow functions in templates (they are not supported).
+
+## API calls
+
+- Call the backend only through the generated client in `src/app/api/`:
+  `inject(Api).invoke(getWeatherForecast)`. Don't write `HttpClient` calls or
+  model interfaces for `/api` endpoints by hand.
+- `src/app/api/` is generated from `../openapi/dao-maxxing-api.json`. Don't
+  edit it. Building `Dao.Maxxing.Api` regenerates it, and so does running
+  `npm run generate:api`. CI fails when it's out of date.
 
 ## Services
 

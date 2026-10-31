@@ -100,7 +100,27 @@ project. Don't use technical folders like `Models/` or `Interfaces/`.
 - Every `/api` endpoint requires the `api` policy unless it is deliberately
   public, in which case use `.AllowAnonymous()` and say why.
 - Give every endpoint `.WithName(...)`. The OpenAPI operation IDs feed the
-  generated Angular client (S2).
+  generated Angular client.
+
+## OpenAPI and the generated client
+
+- Every build of `Dao.Maxxing.Api` writes `openapi/dao-maxxing-api.json`
+  (`Microsoft.Extensions.ApiDescription.Server`). The Angular client in
+  `Dao.Maxxing.Web/src/app/api/` is generated from it with `npm run
+  generate:api` (`ng-openapi-gen.json`). Both are committed. Never edit them by
+  hand.
+- Building the API also regenerates the client when the document changed
+  (the `GenerateAngularApiClient` target). It's skipped if `Dao.Maxxing.Web`
+  has no `node_modules`, so run `npm ci` there first. Commit both outputs. CI
+  fails if either generator fails or its output differs from the PR.
+- In Development, the API serves the document at `/openapi/v1.json` and a
+  Scalar API reference at `/scalar`. Both are also proxied by the Angular dev
+  server. Neither is mapped in any other environment.
+- The build-time generator starts the app without secrets. `OpenApiSetup`
+  supplies placeholder settings only inside that generator, so add any new
+  required setting there too.
+- Endpoints that the generated client shouldn't call, such as the auth
+  redirects, use `.ExcludeFromDescription()`.
 
 ## Testing
 

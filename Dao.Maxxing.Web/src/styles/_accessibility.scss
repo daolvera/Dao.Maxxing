@@ -1,0 +1,20 @@
+// Accessibility fixes that no Bootstrap Sass variable can make. Keep this file tiny, and give
+// every rule a reason. Everything else is themed in _variables.scss.
+
+// WCAG 1.4.11: focus indicators need 3:1. Bootstrap hard-codes button focus rings at 50% opacity of
+// a tint (scss/_buttons.scss), which fades into the page. This sets the button's own focus-ring
+// variable to the solid theme ring that every other control already uses.
+.btn {
+  --bs-btn-focus-box-shadow: #{$focus-ring-box-shadow};
+}
+
+// WCAG 1.4.3: outline buttons keep their light-theme text color in dark mode, which is about 3.3:1
+// on the dark background (secondary, danger). Bootstrap's dark-mode text-emphasis colors are 6:1 or more.
+// Hover and active states keep Bootstrap's filled colors.
+[data-bs-theme='dark'] {
+  @each $color, $value in $theme-colors {
+    .btn-outline-#{$color} {
+      --bs-btn-color: var(--bs-#{$color}-text-emphasis);
+    }
+  }
+}

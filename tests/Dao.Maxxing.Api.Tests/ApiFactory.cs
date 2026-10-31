@@ -25,9 +25,11 @@ public class ApiFactory : WebApplicationFactory<Program>
 
     public Action<IServiceCollection>? ConfigureServices { get; set; }
 
+    public string Environment { get; init; } = "Testing";
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.UseEnvironment("Testing");
+        builder.UseEnvironment(Environment);
         foreach (var (key, value) in Settings) builder.UseSetting(key, value);
         builder.ConfigureServices(services =>
         {

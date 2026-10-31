@@ -5,3 +5,6 @@
 @import 'styles/variables';
 
 @import 'bootstrap/scss/bootstrap';
+
+// Contrast fixes Bootstrap's variables can't reach. See the file before adding to it.
+@import 'styles/accessibility';

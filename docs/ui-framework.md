@@ -61,6 +61,32 @@ would cost something on every form in a mostly-forms app.
   - Sass `@import` deprecation warnings from Bootstrap 5.3 are silenced in
     `angular.json`.
 - The theme lives in `Dao.Maxxing.Web/src/styles/_variables.scss`. `$primary` is
-  the mock's `#058743`.
+  the mock's `#058743`, and the body text is the mock's ink, `#203c2e`. Buttons
+  and headings are semibold, as in the mock.
+
+## Accessibility (U2)
+
+The theme is set for WCAG AA contrast in both light and dark mode:
+
+| Item | Bootstrap default | Theme | Ratio |
+|---|---|---|---|
+| White text on `$primary` | n/a | `#058743` | 4.61:1 |
+| Control borders (1.4.11) | `#dee2e6`, 1.3:1 | `#7c8f81` | 3.44:1 light, 4.48:1 dark |
+| Close buttons (1.4.11) | 50% opacity | 75% opacity | 3:1 or more on colored headers |
+| Focus rings (1.4.11) | 25% or 50% opacity | solid `$primary` | 4.61:1 light, 3.34:1 dark |
+
+- Bootstrap hard-codes button focus rings at 50% opacity, so
+  `src/styles/_accessibility.scss` points the button's focus-ring variable at
+  the solid ring. It also gives outline buttons Bootstrap's dark-mode emphasis text color,
+  because their default text is about 3.3:1 on the dark background. These are
+  the only global rules outside the variables.
+- Shared controls:
+  - `AlertModalComponent` and `ConfirmModalComponent` are named by their
+    heading through `aria-labelledby`, and their close buttons are labelled.
+    Focus starts on OK, or on Cancel for a confirmation. Alert headers use
+    `text-bg-*`, so their text always contrasts.
+  - `<app-form-field>` pairs the label with the control and links the hint
+    and error through `aria-describedby` and `aria-invalid`.
+- `/template` is a sandbox that shows every shared control.
 - The styling rules for agents are in
   [Dao.Maxxing.Web/AGENTS.md](../Dao.Maxxing.Web/AGENTS.md#styling-always-bootstrap-first).

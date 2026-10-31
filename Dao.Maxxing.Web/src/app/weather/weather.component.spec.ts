@@ -29,8 +29,8 @@ describe('WeatherComponent', () => {
     TestBed.inject(HttpTestingController).expectOne('/api/weatherforecast')
       .flush('Unavailable', { status: 503, statusText: 'Service Unavailable' });
     await fixture.whenStable();
-    expect(fixture.nativeElement.querySelector('.error').textContent)
+    expect(fixture.nativeElement.querySelector('[role=alert]').textContent)
       .toContain('Failed to load weather data');
-    expect(fixture.nativeElement.querySelector('.loading')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[role=status]')).toBeNull();
   });
 });

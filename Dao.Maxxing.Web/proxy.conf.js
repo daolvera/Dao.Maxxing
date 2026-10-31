@@ -12,4 +12,7 @@ module.exports = {
   '/signin-google': { target: apiUrl, secure: false, changeOrigin: false },
   '/connect': { target: apiUrl, secure: false, changeOrigin: false },
   '/.well-known': { target: apiUrl, secure: false, changeOrigin: false },
+  // Development-only API reference and the document it reads.
+  '/scalar': { target: apiUrl, secure: false, changeOrigin: false },
+  '/openapi': { target: apiUrl, secure: false, changeOrigin: false },
 };
