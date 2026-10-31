@@ -6,12 +6,12 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Dao.Maxxing.Api.Tests;
 
-public class ApiTests
+public class ApiTests(SqlServerFixture sql)
 {
     [Fact]
     public async Task Health_ReturnsOk()
     {
-        await using var factory = new ApiFactory();
+        await using var factory = new ApiFactory(sql.ConnectionString);
 
         var response = await factory.CreateClient().GetAsync("/health", TestContext.Current.CancellationToken);
 
@@ -21,7 +21,7 @@ public class ApiTests
     [Fact]
     public async Task ProtectedEndpoint_WhenSignedOut_ReturnsUnauthorizedProblem()
     {
-        await using var factory = new ApiFactory();
+        await using var factory = new ApiFactory(sql.ConnectionString);
 
         var response = await factory.CreateClient().GetAsync("/api/weatherforecast", TestContext.Current.CancellationToken);
 
@@ -34,7 +34,7 @@ public class ApiTests
     [Fact]
     public async Task ProtectedEndpoint_WhenSignedIn_ReturnsForecastFromService()
     {
-        await using var factory = new ApiFactory();
+        await using var factory = new ApiFactory(sql.ConnectionString);
 
         var forecast = await factory.CreateSignedInClient()
             .GetFromJsonAsync<WeatherForecast[]>("/api/weatherforecast", TestContext.Current.CancellationToken);
@@ -45,7 +45,7 @@ public class ApiTests
     [Fact]
     public async Task UnhandledException_ReturnsProblemWithoutExceptionDetails()
     {
-        await using var factory = new ApiFactory
+        await using var factory = new ApiFactory(sql.ConnectionString)
         {
             ConfigureServices = services => services.AddScoped<IWeatherForecastService, ThrowingWeatherService>(),
         };
@@ -61,7 +61,7 @@ public class ApiTests
     [Fact]
     public async Task Startup_WithMissingGoogleSettings_FailsWithActionableMessage()
     {
-        await using var factory = new ApiFactory();
+        await using var factory = new ApiFactory(sql.ConnectionString);
         factory.Settings["Authentication:Google:ClientSecret"] = "";
 
         var error = Assert.ThrowsAny<Exception>(() => factory.CreateClient());

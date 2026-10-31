@@ -42,6 +42,29 @@ project. Don't use technical folders like `Models/` or `Interfaces/`.
   - Compose them in an orchestrating service that takes
     `IEnumerable<IFoodProvider>` or an explicit ordered list.
 
+## Data
+
+- The database is SQL Server: a container through Aspire locally, Azure SQL
+  in Azure. See [docs/database.md](docs/database.md).
+- `MaxxingDbContext`, `DatabaseOptions`, and the migrations live in
+  `Dao.Maxxing.Services/Data/`. Core stays free of EF: entities are Core
+  records or Services-internal types, configured with an
+  `IEntityTypeConfiguration<T>` in the feature's Services folder. The context
+  picks those up automatically.
+- Services use `MaxxingDbContext` directly. Endpoints never inject it; they
+  call a Core interface.
+- After changing the model, add a migration and commit it. A Services test
+  fails if the model has changes no migration covers.
+
+  ```bash
+  dotnet tool restore
+  dotnet ef migrations add <Name> --project Dao.Maxxing.Services --output-dir Data/Migrations
+  ```
+
+- Migrations run on startup in every environment (`DatabaseMigrator`), so a
+  migration must be safe to apply while the previous version is still
+  serving. Add before you drop.
+
 ## Configuration: always `IOptions`
 
 - Never read `IConfiguration["..."]` in application code. Each settings group
@@ -129,6 +152,10 @@ project. Don't use technical folders like `Models/` or `Interfaces/`.
   and `NullLogger`. Also check that bad configuration fails options validation.
 - **Integration tests:** `tests/Dao.Maxxing.Api.Tests` uses `ApiFactory`,
   which wraps `WebApplicationFactory` in the `Testing` environment.
+  - The database is a real SQL Server from `SqlServerFixture`
+    (Testcontainers), so Docker must be running. Take the fixture in the test
+    class's constructor and pass `sql.ConnectionString` to `ApiFactory`, or
+    `sql.NewDatabase()` for a test that needs its own database.
   - Use `CreateSignedInClient()` for authenticated calls.
   - Swap services through `ConfigureServices`.
   - Assert status codes and ProblemDetails shape.

@@ -69,6 +69,7 @@ jobs:
             echo "::error::openapi/ is out of date. Build the solution, run 'npm run generate:api' in Dao.Maxxing.Web, and commit both."
             exit 1
           fi
+      # Api.Tests start a real SQL Server through Testcontainers (Docker is on the runner).
       - run: dotnet test Dao.Maxxing.slnx -c Release --no-build
 
   container:
@@ -89,14 +90,28 @@ jobs:
         run: >
           dotnet publish Dao.Maxxing.Api -c Release -t:PublishContainer
           -p:ContainerRepository=dao-maxxing-api -p:ContainerImageTag=ci
+      # Same image as the AppHost. The password is a throwaway for this job's container, not a secret.
+      - name: Start SQL Server
+        run: |
+          docker network create ci
+          docker run -d --name sql --network ci -e ACCEPT_EULA=Y -e MSSQL_SA_PASSWORD='Ci-Throwaway-1' \
+            mcr.microsoft.com/mssql/server:2022-latest
+          for i in $(seq 1 30); do
+            docker exec sql /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P 'Ci-Throwaway-1' -Q 'SELECT 1' -b -o /dev/null && exit 0
+            sleep 2
+          done
+          docker logs sql
+          exit 1
       - name: Run container
         # Dummy values satisfy startup validation; no real sign-in happens in CI.
+        # The API creates and migrates the database on startup, so /health also checks the migrations.
         run: >
-          docker run -d --name api -p 8080:8080
+          docker run -d --name api --network ci -p 8080:8080
           -e ASPNETCORE_ENVIRONMENT=Production
           -e Authentication__PublicOrigin=https://localhost
           -e Authentication__Google__ClientId=ci-dummy
           -e Authentication__Google__ClientSecret=ci-dummy
+          -e "ConnectionStrings__maxxing=Server=sql;Database=maxxing;User ID=sa;Password=Ci-Throwaway-1;TrustServerCertificate=true"
           dao-maxxing-api:ci
       - name: Check health and SPA
         run: |

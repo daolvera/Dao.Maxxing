@@ -12,12 +12,14 @@ namespace Dao.Maxxing.Api.Tests;
 
 /// <summary>
 /// Runs the API in-process under a "Testing" environment (no user secrets, no developer exception page).
-/// Requests carrying <see cref="TestAuthHandler.UserHeader"/> are signed in.
+/// Requests carrying <see cref="TestAuthHandler.UserHeader"/> are signed in. The database is real
+/// SQL Server from <see cref="SqlServerFixture"/>, migrated on startup as in every environment.
 /// </summary>
-public class ApiFactory : WebApplicationFactory<Program>
+public class ApiFactory(string connectionString) : WebApplicationFactory<Program>
 {
     public Dictionary<string, string?> Settings { get; } = new()
     {
+        ["ConnectionStrings:maxxing"] = connectionString,
         ["Authentication:PublicOrigin"] = "https://localhost",
         ["Authentication:Google:ClientId"] = "test-client-id",
         ["Authentication:Google:ClientSecret"] = "test-client-secret",
