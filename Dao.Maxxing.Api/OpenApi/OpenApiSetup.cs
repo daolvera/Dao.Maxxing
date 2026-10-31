@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text.Json.Serialization;
+using Scalar.AspNetCore;
 
 namespace Dao.Maxxing.Api.OpenApi;
 
@@ -31,5 +32,19 @@ public static class OpenApiSetup
         }
 
         return builder;
+    }
+
+    /// <summary>
+    /// In Development only, serves the document at /openapi/v1.json and the Scalar API reference at /scalar.
+    /// </summary>
+    public static WebApplication MapApiOpenApi(this WebApplication app)
+    {
+        if (app.Environment.IsDevelopment())
+        {
+            app.MapOpenApi();
+            app.MapScalarApiReference();
+        }
+
+        return app;
     }
 }

@@ -18,10 +18,7 @@ app.UseApiProblemDetails();
 await app.InitializeTemplateAuthenticationAsync();
 app.UseForwardedHeaders();
 
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
+app.MapApiOpenApi();
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();

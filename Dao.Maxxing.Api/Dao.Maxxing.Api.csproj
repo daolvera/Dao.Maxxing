@@ -20,6 +20,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Scalar.AspNetCore" Version="2.18.7" />
   </ItemGroup>
 
   <ItemGroup>
@@ -27,5 +28,21 @@
     <ProjectReference Include="..\Dao.Maxxing.Services\Dao.Maxxing.Services.csproj" />
     <ProjectReference Include="..\Dao.Maxxing.ServiceDefaults\Dao.Maxxing.ServiceDefaults.csproj" />
   </ItemGroup>
+
+  <!--
+    Regenerates the Angular client whenever the OpenAPI document changes. Skipped when the web
+    project has no node_modules (the dotnet CI job, container publish); CI's web job checks the client.
+  -->
+  <PropertyGroup>
+    <WebProjectDirectory>$(MSBuildThisFileDirectory)..\Dao.Maxxing.Web\</WebProjectDirectory>
+  </PropertyGroup>
+  <Target Name="GenerateAngularApiClient"
+          AfterTargets="Build"
+          Condition="Exists('$(WebProjectDirectory)node_modules\ng-openapi-gen')"
+          Inputs="$(OpenApiDocumentsDirectory)\dao-maxxing-api.json;$(WebProjectDirectory)ng-openapi-gen.json"
+          Outputs="$(IntermediateOutputPath)angular-api-client.stamp">
+    <Exec Command="npm run generate:api --silent" WorkingDirectory="$(WebProjectDirectory)" />
+    <Touch Files="$(IntermediateOutputPath)angular-api-client.stamp" AlwaysCreate="true" />
+  </Target>
 
 </Project>

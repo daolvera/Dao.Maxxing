@@ -113,8 +113,8 @@ Angular Material, Tailwind, or any other UI kit or CSS framework.
   `inject(Api).invoke(getWeatherForecast)`. Don't write `HttpClient` calls or
   model interfaces for `/api` endpoints by hand.
 - `src/app/api/` is generated from `../openapi/dao-maxxing-api.json`. Don't
-  edit it. Regenerate it with `npm run generate:api` after an API change. CI
-  fails when it's out of date.
+  edit it. Building `Dao.Maxxing.Api` regenerates it, and so does running
+  `npm run generate:api`. CI fails when it's out of date.
 
 ## Services
 

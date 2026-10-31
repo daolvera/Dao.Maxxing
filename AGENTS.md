@@ -109,9 +109,13 @@ project. Don't use technical folders like `Models/` or `Interfaces/`.
   `Dao.Maxxing.Web/src/app/api/` is generated from it with `npm run
   generate:api` (`ng-openapi-gen.json`). Both are committed. Never edit them by
   hand.
-- After any API contract change, build, run `npm run generate:api` in
-  `Dao.Maxxing.Web`, and commit both. CI fails if either generator fails or its
-  output differs from the PR.
+- Building the API also regenerates the client when the document changed
+  (the `GenerateAngularApiClient` target). It's skipped if `Dao.Maxxing.Web`
+  has no `node_modules`, so run `npm ci` there first. Commit both outputs. CI
+  fails if either generator fails or its output differs from the PR.
+- In Development, the API serves the document at `/openapi/v1.json` and a
+  Scalar API reference at `/scalar`. Both are also proxied by the Angular dev
+  server. Neither is mapped in any other environment.
 - The build-time generator starts the app without secrets. `OpenApiSetup`
   supplies placeholder settings only inside that generator, so add any new
   required setting there too.
