@@ -6,37 +6,43 @@ export type AlertType = 'success' | 'error' | 'warning' | 'info';
 /**
  * Alert modal component
  * Simple informational modal with single OK button
+ *
+ * Inputs stay `@Input()` because NgbModal sets them through `componentInstance`, which signal
+ * inputs don't support.
  */
 @Component({
   selector: 'app-alert-modal',
-  standalone: true,
   imports: [],
   template: `
-    <div class="modal-header" [class]="'bg-' + alertClass">
-      <h5
-        class="modal-title"
-        [class.text-white]="alertClass === 'danger' || alertClass === 'primary'"
-      >
-        <i [class]="'bi ' + iconClass + ' me-2'"></i>
+    <!-- text-bg-* picks a text color that contrasts with the header background. -->
+    <div class="modal-header" [class]="'text-bg-' + alertClass">
+      <h2 class="modal-title h5" [id]="titleId">
+        <i [class]="'bi ' + iconClass + ' me-2'" aria-hidden="true"></i>
         {{ title }}
-      </h5>
+      </h2>
       <button
         type="button"
         class="btn-close"
-        [class.btn-close-white]="alertClass === 'danger' || alertClass === 'primary'"
+        [class.btn-close-white]="hasDarkHeader"
+        aria-label="Close"
         (click)="activeModal.dismiss()"
       ></button>
     </div>
     <div class="modal-body">
       <p>{{ message }}</p>
       @if (details) {
-        <div class="alert" [class]="'alert-' + alertClass">
+        <div class="alert mb-0" [class]="'alert-' + alertClass">
           {{ details }}
         </div>
       }
     </div>
     <div class="modal-footer">
-      <button type="button" [class]="'btn btn-' + alertClass" (click)="activeModal.close()">
+      <button
+        type="button"
+        [class]="'btn btn-' + alertClass"
+        ngbAutofocus
+        (click)="activeModal.close()"
+      >
         {{ buttonText }}
       </button>
     </div>
@@ -51,6 +57,8 @@ export class AlertModalComponent {
   @Input() message = '';
   @Input() details?: string;
   @Input() buttonText = 'OK';
+  /** Set by `ModalService` so the dialog is named by its title. */
+  @Input() titleId = 'app-alert-modal-title';
 
   get alertClass(): string {
     const map: Record<AlertType, string> = {
@@ -60,6 +68,11 @@ export class AlertModalComponent {
       info: 'info',
     };
     return map[this.type];
+  }
+
+  /** Bootstrap gives success and danger white text, and warning and info dark text. */
+  get hasDarkHeader(): boolean {
+    return this.type === 'success' || this.type === 'error';
   }
 
   get iconClass(): string {

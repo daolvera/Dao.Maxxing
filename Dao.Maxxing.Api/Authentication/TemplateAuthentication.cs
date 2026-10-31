@@ -99,7 +99,10 @@ public static class TemplateAuthentication
             }
             await next(context);
         });
-        app.MapGet("/api/auth/csrf", (HttpContext context, IAntiforgery antiforgery) =>
+        // The session endpoints are browser plumbing used by the hand-written AuthService, not the
+        // generated API client, so they stay out of the OpenAPI document.
+        var auth = app.MapGroup("/api/auth").ExcludeFromDescription();
+        auth.MapGet("/csrf", (HttpContext context, IAntiforgery antiforgery) =>
         {
             context.Response.Headers.CacheControl = "no-store";
             var tokens = antiforgery.GetAndStoreTokens(context);
@@ -107,21 +110,21 @@ public static class TemplateAuthentication
         })
         .AllowAnonymous();
 
-        app.MapGet("/api/auth/me", (HttpContext context) => Results.Ok(new
+        auth.MapGet("/me", (HttpContext context) => Results.Ok(new
         {
             id = context.User.FindFirstValue("sub") ?? context.User.FindFirstValue(ClaimTypes.NameIdentifier),
             name = context.User.Identity?.Name ?? context.User.FindFirstValue("name"),
         })).RequireAuthorization("api");
 
-        app.MapGet("/api/auth/config", (HttpContext context, PublicOrigin origin, IConfiguration configuration) =>
+        auth.MapGet("/config", (HttpContext context, PublicOrigin origin, IConfiguration configuration) =>
         {
             context.Response.Headers.CacheControl = "no-store";
             return Results.Ok(new { authority = origin.Value, clientId = "angular", scope = "api", origin = origin.Value });
         }).AllowAnonymous();
 
-        app.MapGet("/api/auth/login", () => Results.Challenge(
+        auth.MapGet("/login", () => Results.Challenge(
             new AuthenticationProperties { RedirectUri = "/" }, ["Google"])).AllowAnonymous();
-        app.MapPost("/api/auth/logout", async (HttpContext context) =>
+        auth.MapPost("/logout", async (HttpContext context) =>
         {
             await context.SignOutAsync(SessionScheme);
             return Results.NoContent();

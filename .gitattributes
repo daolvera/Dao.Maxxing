@@ -61,3 +61,9 @@
 #*.PDF   diff=astextplain
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
+
+###############################################################################
+# Generated from the API. Collapsed in GitHub diffs; regenerate, don't edit.
+###############################################################################
+openapi/*.json linguist-generated=true
+Dao.Maxxing.Web/src/app/api/** linguist-generated=true

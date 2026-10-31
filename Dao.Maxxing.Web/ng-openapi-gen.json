@@ -1,0 +1,9 @@
+{
+  "$schema": "node_modules/ng-openapi-gen/ng-openapi-gen-schema.json",
+  "input": "../openapi/dao-maxxing-api.json",
+  "output": "src/app/api",
+  "promises": false,
+  "ignoreUnusedModels": false,
+  "endOfLineStyle": "lf",
+  "silent": true
+}

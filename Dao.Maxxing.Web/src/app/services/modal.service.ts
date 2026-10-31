@@ -10,6 +10,12 @@ interface ModalTitleComponent {
   title: string;
 }
 
+interface ModalTitleIdComponent {
+  titleId: string;
+}
+
+let nextTitleId = 0;
+
 /**
  * Service to manage modals using ng-bootstrap
  */
@@ -23,6 +29,10 @@ export class ModalService {
     return typeof instance === 'object' && instance !== null && 'title' in instance;
   }
 
+  private hasTitleIdProperty(instance: unknown): instance is ModalTitleIdComponent {
+    return typeof instance === 'object' && instance !== null && 'titleId' in instance;
+  }
+
   /**
    * Open a modal with the specified component
    * @param component The component to display in the modal
@@ -30,7 +40,11 @@ export class ModalService {
    * @returns NgbModalRef reference to the opened modal
    */
   open<T>(component: Type<T>, config?: IModalConfig): NgbModalRef {
+    // Screen readers announce the dialog by its title. Components opt in with a `titleId` input
+    // that they put on their heading; ids are unique so stacked modals don't collide.
+    const titleId = `app-modal-title-${++nextTitleId}`;
     const options: NgbModalOptions = {
+      ariaLabelledBy: titleId,
       size: config?.size,
       backdrop: config?.backdrop ?? true,
       keyboard: config?.keyboard ?? true,
@@ -38,6 +52,10 @@ export class ModalService {
     };
 
     const modalRef = this.ngbModal.open(component, options);
+
+    if (this.hasTitleIdProperty(modalRef.componentInstance)) {
+      modalRef.componentInstance.titleId = titleId;
+    }
 
     // If title is provided, set it on the component instance if it has a title property
     if (config?.title && this.hasTitleProperty(modalRef.componentInstance)) {
