@@ -92,12 +92,68 @@ Angular Material, Tailwind, or any other UI kit or CSS framework.
 - Do NOT use `ngStyle`, use `style` bindings instead
 - When using external templates/styles, use paths relative to the component TS file.
 
-## State Management
+## Feature structure
 
-- Use signals for local component state
-- Use `computed()` for derived state
-- Keep state transformations pure and predictable
-- Do NOT use `mutate` on signals, use `update` or `set` instead
+Each screen is a lazy-loaded feature under `src/app/features/<name>/`, mounted
+inside `layout/ShellComponent` by `app.routes.ts` with `loadChildren`:
+
+```
+features/diary/
+  diary.routes.ts            route, page title, and route-scoped providers
+  diary-page.component.ts    the page; small child components beside it
+  data-access/
+    diary-day.ts             domain types and pure helpers
+    diary.data-source.ts     abstract contract (the backend boundary)
+    local-diary.data-source.ts  PLACEHOLDER implementation, see below
+    diary.store.ts           signal store for the page
+```
+
+Shared, feature-agnostic pieces stay in `components/`, `services/`, and
+`nutrition/` (types and math). A feature may import another feature's
+`data-access/` but never its components.
+
+## State management
+
+One pattern: **data source → signal store → component**.
+
+- **Data sources** are the only code that talks to the backend. Each is an
+  abstract class with `@Injectable({ providedIn: 'root', useClass: ... })` and
+  returns `Observable`s. Implementations call `inject(Api).invoke(fn, params)`
+  from the generated client (see `weather/weather.service.ts`).
+- **Placeholders.** While an endpoint doesn't exist, `useClass` points at a
+  `Local*DataSource` over the in-memory `placeholder/PlaceholderDb`, and the
+  page shows `<app-placeholder-notice>` with the issue that adds the endpoint.
+  When it lands, write the `Api`-backed class, switch `useClass`, and delete
+  the placeholder and notice. Stores and components don't change.
+- **Stores** are `@Injectable` classes that hold a feature's state as signals.
+  - Reads use `rxResource({ params, stream })` over the data source, so loading
+    and error state come for free and changing a `params` signal (the date, the
+    week) refetches.
+  - Expose read-only signals and `computed()` views. Components never write a
+    store's signals directly; they call its methods.
+  - Writes go through `createMutationRunner()`
+    (`data-access/mutation-runner.ts`). It tracks `saving`, applies the
+    server's response to the resource with `.set()`/`.update()`, shows a toast,
+    and resolves `true` or `false`. Forms and modals close only on `true`, so a
+    failed save keeps the user's input.
+  - Scope: provide a page's store in its route's `providers` so it resets when
+    you leave. Use `providedIn: 'root'` only for state other features read
+    (`FoodsStore`, `SettingsStore`).
+- **Components** keep UI-only state (open tabs, search text, form values) in
+  local signals and reactive forms. Modals opened through `ModalService` can't
+  inject route-scoped stores, so pass them a `save` callback instead.
+- Time comes from the `NOW` token (`nutrition/nutrition.ts`), never
+  `new Date()` in a store, so specs can use `provideFixedClock()`.
+- Keep state transformations pure. Use `set` or `update` on signals, never
+  `mutate`.
+
+## Testing
+
+- Specs use Vitest through `ng test`. Stores are tested with a fake data source
+  or the placeholder plus `provideFixedClock()` and `TestBed.tick()`.
+- Specs that open modals or the offcanvas use `provideNoNgbAnimations()` and
+  call `closeOverlays()` in `afterEach` (`testing/modals.ts`). Otherwise
+  ng-bootstrap removes the element after teardown and the run fails.
 
 ## Templates
 
@@ -110,8 +166,9 @@ Angular Material, Tailwind, or any other UI kit or CSS framework.
 ## API calls
 
 - Call the backend only through the generated client in `src/app/api/`:
-  `inject(Api).invoke(getWeatherForecast)`. Don't write `HttpClient` calls or
-  model interfaces for `/api` endpoints by hand.
+  `inject(Api).invoke(getWeatherForecast)`, and only from a feature's data
+  source (see State management). Don't write `HttpClient` calls or model
+  interfaces for `/api` endpoints by hand.
 - `src/app/api/` is generated from `../openapi/dao-maxxing-api.json`. Don't
   edit it. Building `Dao.Maxxing.Api` regenerates it, and so does running
   `npm run generate:api`. CI fails when it's out of date.

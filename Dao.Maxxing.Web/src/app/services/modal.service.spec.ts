@@ -1,13 +1,15 @@
 import { TestBed } from '@angular/core/testing';
 import { ConfirmModalComponent } from '../components/confirm-modal/confirm-modal.component';
+import { closeOverlays, nextModalRender, provideNoNgbAnimations } from '../testing/modals';
 import { ModalService } from './modal.service';
 
 describe('ModalService', () => {
-  afterEach(() => TestBed.inject(ModalService).closeAll());
+  beforeEach(() => TestBed.configureTestingModule({ providers: [provideNoNgbAnimations()] }));
+  afterEach(() => closeOverlays());
 
   it('names the dialog by its title', async () => {
     const ref = TestBed.inject(ModalService).open(ConfirmModalComponent, { title: 'Delete food?' });
-    await new Promise((resolve) => setTimeout(resolve));
+    await nextModalRender();
 
     const dialog = document.querySelector('[role=dialog]')!;
     const titleId = dialog.getAttribute('aria-labelledby')!;
