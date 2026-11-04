@@ -8,6 +8,7 @@ public sealed class AuthenticationSettings
 
     public string? PublicOrigin { get; set; }
     public GoogleSettings Google { get; set; } = new();
+    public OwnerSettings Owner { get; set; } = new();
 
     /// <summary>The validated public origin as scheme://host[:port], with no trailing slash.</summary>
     public string PublicOriginAuthority => new Uri(PublicOrigin!).GetLeftPart(UriPartial.Authority);
@@ -16,6 +17,16 @@ public sealed class AuthenticationSettings
     {
         public string? ClientId { get; set; }
         public string? ClientSecret { get; set; }
+    }
+
+    /// <summary>The one account allowed to use the app.</summary>
+    public sealed class OwnerSettings
+    {
+        /// <summary>
+        /// The owner's Google subject ID (the ID token's <c>sub</c> claim). It never changes for an
+        /// account, unlike the email address, which can be renamed or reassigned.
+        /// </summary>
+        public string? GoogleSubject { get; set; }
     }
 }
 
@@ -33,6 +44,10 @@ internal sealed class AuthenticationSettingsValidator : IValidateOptions<Authent
         if (string.IsNullOrWhiteSpace(options.Google.ClientId) || string.IsNullOrWhiteSpace(options.Google.ClientSecret))
         {
             failures.Add("Set Authentication:Google:ClientId and ClientSecret using user secrets or deployment secrets. See docs/authentication.md.");
+        }
+        if (string.IsNullOrWhiteSpace(options.Owner.GoogleSubject))
+        {
+            failures.Add("Set Authentication:Owner:GoogleSubject to the owner's Google subject ID using user secrets or deployment secrets. See docs/authentication.md.");
         }
         return failures.Count == 0 ? ValidateOptionsResult.Success : ValidateOptionsResult.Fail(failures);
     }

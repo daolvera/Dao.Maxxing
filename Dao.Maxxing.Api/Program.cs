@@ -12,12 +12,10 @@ builder.AddApiOpenApi();
 builder.Services.AddApiProblemDetails();
 builder.Services.AddMaxxingServices(builder.Configuration);
 builder.AddApiDatabase();
-builder.AddTemplateAuthentication();
-
+builder.AddGoogleBffAuthentication();
 
 var app = builder.Build();
 app.UseApiProblemDetails();
-await app.InitializeTemplateAuthenticationAsync();
 app.UseForwardedHeaders();
 
 app.MapApiOpenApi();
@@ -26,7 +24,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
-app.MapTemplateAuthentication();
+app.MapGoogleBffAuthentication();
 
 app.MapDefaultEndpoints();
 app.MapWeatherEndpoints();
