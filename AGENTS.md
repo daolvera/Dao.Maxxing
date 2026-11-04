@@ -156,7 +156,10 @@ project. Don't use technical folders like `Models/` or `Interfaces/`.
     (Testcontainers), so Docker must be running. Take the fixture in the test
     class's constructor and pass `sql.ConnectionString` to `ApiFactory`, or
     `sql.NewDatabase()` for a test that needs its own database.
-  - Use `CreateSignedInClient()` for authenticated calls.
+  - Use `CreateSignedInClient()` for authenticated calls as the owner, and
+    `CreateSignedInClient("other-subject")` for a non-owner (403).
+  - Mutating requests need the CSRF token from `/api/auth/csrf` in the
+    `X-XSRF-TOKEN` header (see `AuthenticationTests`).
   - Swap services through `ConfigureServices`.
   - Assert status codes and ProblemDetails shape.
 - Every new endpoint needs a signed-out 401 test and a happy-path test. Every

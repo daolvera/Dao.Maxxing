@@ -15,8 +15,9 @@ export class AuthService {
 
   async initialize(): Promise<void> {
     try {
-      if (new URLSearchParams(window.location.search).has('authError')) {
-        this.error.set('Sign-in failed or was cancelled. Try again.');
+      const authError = new URLSearchParams(window.location.search).get('authError');
+      if (authError !== null) {
+        this.error.set(authErrorMessage(authError));
         window.history.replaceState({}, '', '/');
       }
       await this.provider.initialize(this.configuration, () => {
@@ -63,4 +64,11 @@ export class AuthService {
     console.error('Authentication failed', error);
     this.error.set(error instanceof Error ? error.message : 'Authentication failed. Check provider setup.');
   }
+}
+
+/** Messages for the `authError` values the API redirects back with after a failed Google sign-in. */
+export function authErrorMessage(code: string): string {
+  return code === 'not-owner'
+    ? "This app is private. Sign in with the owner's Google account."
+    : 'Sign-in failed or was cancelled. Try again.';
 }
