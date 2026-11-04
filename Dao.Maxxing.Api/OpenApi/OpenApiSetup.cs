@@ -28,6 +28,9 @@ public static class OpenApiSetup
                 ["Authentication:PublicOrigin"] = "https://localhost",
                 ["Authentication:Google:ClientId"] = "openapi-build",
                 ["Authentication:Google:ClientSecret"] = "openapi-build",
+                // The generator never touches the database, so it must not try to migrate one.
+                ["ConnectionStrings:maxxing"] = "Server=openapi-build;Database=maxxing",
+                ["Database:ApplyMigrationsOnStartup"] = "false",
             });
         }
 

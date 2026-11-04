@@ -2,14 +2,14 @@ using System.Net;
 
 namespace Dao.Maxxing.Api.Tests;
 
-public class OpenApiTests
+public class OpenApiTests(SqlServerFixture sql)
 {
     [Theory]
     [InlineData("/openapi/v1.json")]
     [InlineData("/scalar")]
     public async Task ApiReference_InDevelopment_IsServedAnonymously(string path)
     {
-        await using var factory = new ApiFactory { Environment = "Development" };
+        await using var factory = new ApiFactory(sql.ConnectionString) { Environment = "Development" };
 
         var response = await factory.CreateClient().GetAsync(path, TestContext.Current.CancellationToken);
 
@@ -21,7 +21,7 @@ public class OpenApiTests
     [InlineData("/scalar")]
     public async Task ApiReference_OutsideDevelopment_IsNotServed(string path)
     {
-        await using var factory = new ApiFactory();
+        await using var factory = new ApiFactory(sql.ConnectionString);
 
         var response = await factory.CreateClient().GetAsync(path, TestContext.Current.CancellationToken);
         var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
