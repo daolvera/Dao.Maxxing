@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { AUTH_CONFIGURATION, AUTH_PROVIDER } from './auth-provider';
+import { AUTH_PROVIDER } from './auth-provider';
 import { AuthService, authErrorMessage } from './auth.service';
 
 describe('AuthService', () => {
@@ -23,9 +23,6 @@ describe('AuthService', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: AUTH_PROVIDER, useValue: provider },
-        { provide: AUTH_CONFIGURATION, useValue: {
-          authority: 'https://localhost:4200', clientId: 'test', scope: 'api', origin: 'https://localhost:4200',
-        } },
       ],
     });
     service = TestBed.inject(AuthService);
@@ -55,6 +52,14 @@ describe('AuthService', () => {
   it('handles an unauthorized current-user request without granting access', async () => {
     const initialized = service.initialize();
     await vi.waitFor(() => http.expectOne('/api/auth/me').flush({}, { status: 401, statusText: 'Unauthorized' }));
+    await initialized;
+    expect(service.user()).toBeNull();
+    expect(service.error()).toBeNull();
+  });
+
+  it('treats a session that is no longer the owner as signed out', async () => {
+    const initialized = service.initialize();
+    await vi.waitFor(() => http.expectOne('/api/auth/me').flush({}, { status: 403, statusText: 'Forbidden' }));
     await initialized;
     expect(service.user()).toBeNull();
     expect(service.error()).toBeNull();
