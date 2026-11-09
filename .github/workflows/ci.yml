@@ -111,6 +111,7 @@ jobs:
           -e Authentication__PublicOrigin=https://localhost
           -e Authentication__Google__ClientId=ci-dummy
           -e Authentication__Google__ClientSecret=ci-dummy
+          -e Authentication__Owner__GoogleSubject=ci-dummy
           -e "ConnectionStrings__maxxing=Server=sql;Database=maxxing;User ID=sa;Password=Ci-Throwaway-1;TrustServerCertificate=true"
           dao-maxxing-api:ci
       - name: Check health and SPA

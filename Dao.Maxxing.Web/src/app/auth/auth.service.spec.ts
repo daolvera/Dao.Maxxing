@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { AUTH_CONFIGURATION, AUTH_PROVIDER } from './auth-provider';
-import { AuthService } from './auth.service';
+import { AuthService, authErrorMessage } from './auth.service';
 
 describe('AuthService', () => {
   const provider = {
@@ -78,5 +78,10 @@ describe('AuthService', () => {
     await logout;
     expect(provider.logout).toHaveBeenCalledOnce();
     expect(service.user()).toBeNull();
+  });
+
+  it('explains when a non-owner Google account was refused', () => {
+    expect(authErrorMessage('not-owner')).toContain('owner');
+    expect(authErrorMessage('google')).toBe('Sign-in failed or was cancelled. Try again.');
   });
 });
