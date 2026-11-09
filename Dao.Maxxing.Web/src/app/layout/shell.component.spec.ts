@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
+import { provideFakeAuth } from '../testing/fake-auth';
 import { stubMatchMedia } from '../testing/match-media';
 import { closeOverlays, nextModalRender, provideNoNgbAnimations } from '../testing/modals';
 import { ShellComponent } from './shell.component';
@@ -17,6 +18,7 @@ describe('ShellComponent', () => {
     TestBed.configureTestingModule({
       providers: [
         provideNoNgbAnimations(),
+        provideFakeAuth({ id: 'owner', name: 'Owner' }),
         provideRouter([
           {
             path: '',

@@ -1,14 +1,13 @@
 import { HttpBackend, HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { AUTH_PROVIDER, AUTH_CONFIGURATION } from './auth-provider';
+import { AUTH_PROVIDER } from './auth-provider';
 
 export interface AppUser { id: string; name: string | null; }
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly provider = inject(AUTH_PROVIDER);
-  private readonly configuration = inject(AUTH_CONFIGURATION);
   private readonly http = new HttpClient(inject(HttpBackend));
   readonly user = signal<AppUser | null>(null);
   readonly error = signal<string | null>(null);
@@ -20,7 +19,7 @@ export class AuthService {
         this.error.set(authErrorMessage(authError));
         window.history.replaceState({}, '', '/');
       }
-      await this.provider.initialize(this.configuration, () => {
+      await this.provider.initialize(() => {
         this.user.set(null);
         this.error.set('Your session expired. Sign in again.');
       });
@@ -30,8 +29,8 @@ export class AuthService {
       try {
         this.user.set(await firstValueFrom(this.http.get<AppUser>('/api/auth/me', { headers })));
       } catch (error) {
-        // A missing cookie session is the expected initial state.
-        if (!(error instanceof HttpErrorResponse) || error.status !== 401) throw error;
+        // No session (401), or one that no longer belongs to the owner (403): treat as signed out.
+        if (!(error instanceof HttpErrorResponse) || (error.status !== 401 && error.status !== 403)) throw error;
       }
     } catch (error) {
       this.fail(error);

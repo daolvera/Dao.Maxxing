@@ -11,6 +11,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { NgbOffcanvas } from '@ng-bootstrap/ng-bootstrap';
 import { filter, skip } from 'rxjs';
+import { AuthService } from '../auth/auth.service';
 import { ThemeToggleComponent } from '../components/theme-toggle/theme-toggle.component';
 import { INavigationItem } from '../models';
 
@@ -70,6 +71,9 @@ export const navigation: INavigationItem[] = [
             <span class="small text-body-secondary">Just for you</span>
             <app-theme-toggle />
           </div>
+          <button type="button" class="btn btn-outline-secondary btn-sm" (click)="signOut()">
+            <i class="bi bi-box-arrow-right" aria-hidden="true"></i> Sign out
+          </button>
         </nav>
 
         <div class="col-lg-9 col-xl-10 d-flex flex-column px-0">
@@ -87,6 +91,9 @@ export const navigation: INavigationItem[] = [
               <span class="visually-hidden">, go to diary</span>
             </a>
             <app-theme-toggle />
+            <button type="button" class="btn btn-outline-secondary" aria-label="Sign out" (click)="signOut()">
+              <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+            </button>
           </header>
           <main id="main-content" #main tabindex="-1" class="flex-grow-1 p-3 p-md-4">
             <router-outlet />
@@ -116,6 +123,8 @@ export const navigation: INavigationItem[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ShellComponent {
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
   private readonly offcanvas = inject(NgbOffcanvas);
   private readonly main = viewChild.required<ElementRef<HTMLElement>>('main');
   private readonly menu = viewChild.required<TemplateRef<unknown>>('menu');
@@ -124,13 +133,19 @@ export class ShellComponent {
   constructor() {
     // A route change replaces the page without a reload, so move focus to the new content the
     // way a page load would. Skip the first navigation so loading the app doesn't steal focus.
-    inject(Router)
-      .events.pipe(
+    this.router.events
+      .pipe(
         filter((event) => event instanceof NavigationEnd),
         skip(1),
         takeUntilDestroyed(),
       )
       .subscribe(() => this.main().nativeElement.focus());
+  }
+
+  protected async signOut(): Promise<void> {
+    await this.auth.logout();
+    // A failed sign-out keeps the user, and AuthService has the error.
+    if (!this.auth.user()) await this.router.navigateByUrl('/');
   }
 
   protected openMenu(): void {

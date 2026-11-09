@@ -1,18 +1,14 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject, provideAppInitializer } from '@angular/core';
 import { from, switchMap } from 'rxjs';
-import { AUTH_PROVIDER, AUTH_CONFIGURATION } from './auth-provider';
+import { AUTH_PROVIDER } from './auth-provider';
 import { AuthService } from './auth.service';
 import { CookieProvider } from './cookie-provider';
 
 export const authenticationProviders = [
   { provide: AUTH_PROVIDER, useClass: CookieProvider },
-  provideAppInitializer(async () => {
-    // The isolated prototype must not contact the real authentication backend.
-    if (window.location.pathname !== '/template') return;
-    const service = inject(AuthService);
-    await service.initialize();
-  }),
+  // The route guards read the signed-in user, so it has to be known before the first navigation.
+  provideAppInitializer(() => inject(AuthService).initialize()),
 ];
 
 export const authInterceptor: HttpInterceptorFn = (request, next) => {

@@ -1,8 +1,18 @@
 import { Routes } from '@angular/router';
+import { signedInGuard, signedOutGuard } from './auth/auth.guards';
 
 export const routes: Routes = [
+  // Public. Signed-in visitors don't match it and fall through to the shell's redirect to the diary.
   {
     path: '',
+    pathMatch: 'full',
+    canMatch: [signedOutGuard],
+    loadComponent: () => import('./features/landing/landing-page.component').then((m) => m.LandingPageComponent),
+    title: 'Maxxing | Personal nutrition tracker',
+  },
+  {
+    path: '',
+    canMatch: [signedInGuard],
     loadComponent: () => import('./layout/shell.component').then((m) => m.ShellComponent),
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'diary' },
