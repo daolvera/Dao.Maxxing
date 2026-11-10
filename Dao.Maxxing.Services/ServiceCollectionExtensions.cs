@@ -1,5 +1,7 @@
+using Dao.Maxxing.Core.Foods;
 using Dao.Maxxing.Core.Weather;
 using Dao.Maxxing.Services.Data;
+using Dao.Maxxing.Services.Foods;
 using Dao.Maxxing.Services.Weather;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -17,6 +19,10 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton(TimeProvider.System);
 
         services.AddMaxxingDatabase(configuration);
+
+        services.AddSingleton<IFoodNormalizer, FoodNormalizer>();
+        services.AddSingleton<INutritionCalculator, NutritionCalculator>();
+        services.AddScoped<IFoodCatalog, FoodCatalog>();
 
         services.AddOptions<WeatherOptions>()
             .Bind(configuration.GetSection(WeatherOptions.SectionName))
