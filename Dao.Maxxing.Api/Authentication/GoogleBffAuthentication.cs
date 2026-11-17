@@ -1,11 +1,9 @@
 using System.Security.Claims;
-using Dao.Maxxing.Services.Data;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Options;
 
@@ -40,11 +38,7 @@ public static partial class GoogleBffAuthentication
             // Retain the framework's trusted-proxy restrictions.
         });
 
-        // Session, correlation, and antiforgery cookies are encrypted with these keys. Keeping them in
-        // the database means sessions survive restarts and deployments and work across instances.
-        builder.Services.AddDataProtection()
-            .SetApplicationName("Dao.Maxxing")
-            .PersistKeysToDbContext<MaxxingDbContext>();
+        builder.AddApiDataProtection();
 
         builder.Services.AddAntiforgery(options =>
         {

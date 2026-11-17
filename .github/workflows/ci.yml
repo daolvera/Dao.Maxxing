@@ -15,6 +15,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  infra:
+    name: infra
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.13.x
+      - run: terraform fmt -check -diff
+      - run: terraform init -backend=false
+      - run: terraform validate
+
   web:
     name: web
     runs-on: ubuntu-latest
@@ -112,6 +127,7 @@ jobs:
           -e Authentication__Google__ClientId=ci-dummy
           -e Authentication__Google__ClientSecret=ci-dummy
           -e Authentication__Owner__GoogleSubject=ci-dummy
+          -e DataProtection__KeyVaultKeyId=https://ci-dummy.vault.azure.net/keys/ci-dummy
           -e "ConnectionStrings__maxxing=Server=sql;Database=maxxing;User ID=sa;Password=Ci-Throwaway-1;TrustServerCertificate=true"
           dao-maxxing-api:ci
       - name: Check health and SPA

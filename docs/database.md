@@ -13,9 +13,8 @@ container run by Aspire; in Azure, Azure SQL Database serverless (D3 #12).
   each.
 - **First-class in the stack.** EF Core's SQL Server provider and Aspire's
   `Aspire.Hosting.SqlServer` / `Aspire.Microsoft.EntityFrameworkCore.SqlServer`
-  integrations are the best-supported path. D3 swaps the AppHost resource for
-  `AddAzureSqlServer(...)` and keeps the `maxxing` connection name, so the API
-  doesn't change.
+  integrations are the best-supported path. Terraform (`infra/`, [deployment.md](deployment.md)) provisions Azure SQL and
+  passes the same `maxxing` connection name, so the API doesn't change.
 - **Relational fits the data.** Foods, servings, meals, and daily logs are
   related records with reporting queries over dates.
 - **Cost.** A single-user tracker is idle most of the day, which is what
@@ -29,7 +28,8 @@ These shape D3 #12; nothing is provisioned in A1.
   database bills only for storage. The first request after a pause waits for
   it to resume (up to about a minute), so the API's connection retries matter.
 - Azure SQL's **free offer** gives one serverless database a monthly allowance
-  of vCore-seconds and storage. Set it to auto-pause when the allowance runs
+  of vCore-seconds and storage. The Terraform provider doesn't expose this offer
+  yet, so it isn't enabled. Set it to auto-pause when the allowance runs
   out rather than bill, unless that's ever a problem.
 - Keep the minimum vCores at the lowest setting. Scale up only if queries get
   slow.
