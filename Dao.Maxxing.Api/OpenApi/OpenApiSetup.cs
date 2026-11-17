@@ -29,6 +29,7 @@ public static class OpenApiSetup
                 ["Authentication:Google:ClientId"] = "openapi-build",
                 ["Authentication:Google:ClientSecret"] = "openapi-build",
                 ["Authentication:Owner:GoogleSubject"] = "openapi-build",
+                ["DataProtection:KeyVaultKeyId"] = "https://openapi-build.vault.azure.net/keys/openapi-build",
                 // The generator never touches the database, so it must not try to migrate one.
                 ["ConnectionStrings:maxxing"] = "Server=openapi-build;Database=maxxing",
                 ["Database:ApplyMigrationsOnStartup"] = "false",

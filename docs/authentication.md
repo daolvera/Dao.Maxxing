@@ -87,8 +87,9 @@ while an address can be renamed or reassigned.
   `Authentication__Google__ClientSecret`, and
   `Authentication__Owner__GoogleSubject` through deployment secrets (D3 #12).
   Never put them in `appsettings*.json` or the Angular app.
-- Data Protection keys are stored in Azure SQL, which encrypts data at rest.
-  D3 should also wrap the keys with Key Vault (`ProtectKeysWithAzureKeyVault`).
+- Data Protection keys are stored in Azure SQL and wrapped with a Key Vault
+  key (`DataProtection:KeyVaultKeyId`, set by Terraform). See
+  docs/deployment.md.
 - Behind a reverse proxy, configure the trusted proxies in
   `ForwardedHeadersOptions`. Never clear the framework's restrictions to trust
   arbitrary forwarded headers. Set `AllowedHosts` to the public host.

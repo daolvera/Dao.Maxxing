@@ -148,6 +148,12 @@ resource "azurerm_role_assignment" "deployer_secrets" {
   principal_id         = data.azurerm_client_config.current.object_id
 }
 
+resource "azurerm_role_assignment" "deployer_keys" {
+  scope                = azurerm_key_vault.main.id
+  role_definition_name = "Key Vault Crypto Officer"
+  principal_id         = data.azurerm_client_config.current.object_id
+}
+
 resource "azurerm_role_assignment" "app_secrets" {
   scope                = azurerm_key_vault.main.id
   role_definition_name = "Key Vault Secrets User"
@@ -160,6 +166,7 @@ resource "time_sleep" "role_propagation" {
   create_duration = "90s"
   depends_on = [
     azurerm_role_assignment.deployer_secrets,
+    azurerm_role_assignment.deployer_keys,
     azurerm_role_assignment.app_secrets,
     azurerm_role_assignment.app_acr_pull,
   ]
@@ -175,6 +182,24 @@ resource "azurerm_key_vault_secret" "app" {
   lifecycle {
     ignore_changes = [value]
   }
+}
+
+# Wraps the Data Protection keys stored in the database (session and antiforgery cookie keys).
+resource "azurerm_key_vault_key" "data_protection" {
+  name         = "data-protection"
+  key_vault_id = azurerm_key_vault.main.id
+  key_type     = "RSA"
+  key_size     = 2048
+  key_opts     = ["wrapKey", "unwrapKey"]
+  depends_on   = [time_sleep.role_propagation]
+}
+
+# The app may only wrap and unwrap with this one key.
+resource "azurerm_role_assignment" "app_data_protection_key" {
+  scope                = azurerm_key_vault_key.data_protection.resource_versionless_id
+  role_definition_name = "Key Vault Crypto Service Encryption User"
+  principal_id         = azurerm_user_assigned_identity.app.principal_id
+  principal_type       = "ServicePrincipal"
 }
 
 resource "azurerm_container_app_environment" "main" {
@@ -252,6 +277,10 @@ resource "azurerm_container_app" "main" {
         value = "Server=tcp:${azurerm_mssql_server.main.fully_qualified_domain_name},1433;Database=${azurerm_mssql_database.main.name};Authentication=Active Directory Managed Identity;User Id=${azurerm_user_assigned_identity.app.client_id};Encrypt=True;Connect Timeout=60"
       }
       env {
+        name  = "DataProtection__KeyVaultKeyId"
+        value = azurerm_key_vault_key.data_protection.versionless_id
+      }
+      env {
         name  = "Authentication__PublicOrigin"
         value = local.public_origin
       }
@@ -285,7 +314,7 @@ resource "azurerm_container_app" "main" {
     }
   }
 
-  depends_on = [time_sleep.role_propagation]
+  depends_on = [time_sleep.role_propagation, azurerm_role_assignment.app_data_protection_key]
 
   lifecycle {
     # D4 deploys new images outside Terraform; don't roll them back on the next apply.

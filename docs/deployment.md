@@ -8,7 +8,7 @@ default region is West US.
 | Container Apps environment and app | Runs the API, which also serves the Angular app. Scales to zero when idle |
 | Azure SQL Database, serverless | App data. Auto-pauses after 60 minutes idle. Entra sign-in only |
 | Storage account, private `photos` container | Progress photos (P2). No public blobs, no shared keys |
-| Key Vault | Google client ID and secret, owner subject |
+| Key Vault | Google client ID and secret, owner subject, and the `data-protection` key that wraps the session keys stored in SQL |
 | Container Registry (Basic) | Application images |
 | Log Analytics workspace | Container and platform logs. 30-day retention, 1 GB/day cap |
 | User-assigned managed identity | The app's identity for everything above. No passwords |
@@ -27,7 +27,7 @@ subscription, because Terraform creates role assignments.
 
    ```bash
    cd infra
-   cp terraform.tfvars.example terraform.tfvars   # then set subscription_id
+   cp terraform.tfvars.example terraform.tfvars   # set subscription_id and environment_name
    terraform init
    ```
 
@@ -78,6 +78,16 @@ subscription, because Terraform creates role assignments.
    `/health` reports whether they applied.
 
 ## Good to know
+
+- **Environments:** `environment_name` names the resource group
+  (`rg-maxxing-<name>`) and resources. `terraform.tfvars` is ignored by git,
+  so which subscription an environment lives in never appears in the
+  repository.
+- **Session keys:** the keys that encrypt session and antiforgery cookies live
+  in the `DataProtectionKeys` table, wrapped with the Key Vault key
+  `data-protection`. The app may only wrap and unwrap with that key. Outside
+  Development and Testing, the API refuses to start without
+  `DataProtection:KeyVaultKeyId`, which Terraform sets.
 
 - **State is local** (`infra/terraform.tfstate`, ignored by git). Keep that
   file safe. It holds no app secrets. D4 #13 moves it to a remote backend so
