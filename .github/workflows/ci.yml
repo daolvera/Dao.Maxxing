@@ -26,9 +26,11 @@ jobs:
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.13.x
-      - run: terraform fmt -check -diff
+      - run: terraform fmt -check -diff -recursive
       - run: terraform init -backend=false
       - run: terraform validate
+      - run: terraform -chdir=bootstrap init -backend=false
+      - run: terraform -chdir=bootstrap validate
 
   web:
     name: web

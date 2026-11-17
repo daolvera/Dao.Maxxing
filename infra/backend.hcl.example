@@ -1,0 +1,8 @@
+# Copy to backend.hcl (ignored by git), fill in from `terraform -chdir=bootstrap output`, then:
+#   terraform init -backend-config=backend.hcl
+subscription_id      = "00000000-0000-0000-0000-000000000000"
+resource_group_name  = "rg-maxxing-tfstate"
+storage_account_name = "stmaxxingtfxxxxxx"
+container_name       = "tfstate"
+key                  = "maxxing-dev.tfstate"
+use_azuread_auth     = true

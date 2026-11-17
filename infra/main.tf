@@ -94,15 +94,40 @@ resource "azurerm_mssql_firewall_rule" "azure_services" {
 }
 
 # Serverless with auto-pause: a paused database bills only for storage (docs/database.md).
-resource "azurerm_mssql_database" "main" {
-  name                        = "maxxing"
-  server_id                   = azurerm_mssql_server.main.id
-  sku_name                    = "GP_S_Gen5_1"
-  min_capacity                = 0.5
-  auto_pause_delay_in_minutes = 60
-  max_size_gb                 = 5
-  storage_account_type        = "Local"
-  tags                        = local.tags
+# With use_sql_free_offer, Azure SQL's free offer covers the monthly compute and storage
+# allowance. azurerm can't set that, so the database is created with azapi.
+resource "azapi_resource" "database" {
+  type      = "Microsoft.Sql/servers/databases@2023-08-01"
+  name      = "maxxing"
+  parent_id = azurerm_mssql_server.main.id
+  location  = azurerm_resource_group.main.location
+  tags      = local.tags
+
+  body = {
+    sku = {
+      name     = "GP_S_Gen5"
+      tier     = "GeneralPurpose"
+      family   = "Gen5"
+      capacity = 1
+    }
+    # Encoded and decoded so the two shapes keep their own types (a plain conditional would turn
+    # every value into a string). The free offer requires the default max size (32 GB, which it
+    # covers) and the default 60-minute auto-pause; without it, pause after 15 idle minutes.
+    properties = jsondecode(var.use_sql_free_offer ? jsonencode({
+      minCapacity                      = 0.5
+      requestedBackupStorageRedundancy = "Local"
+      useFreeLimit                     = true
+      freeLimitExhaustionBehavior      = var.sql_free_limit_exhaustion_behavior
+      }) : jsonencode({
+      minCapacity                      = 0.5
+      requestedBackupStorageRedundancy = "Local"
+      maxSizeBytes                     = 5 * 1024 * 1024 * 1024
+      autoPauseDelay                   = 15
+    }))
+  }
+
+  # The free offer can only be chosen when a database is created.
+  replace_triggers_refs = ["properties.useFreeLimit"]
 }
 
 # Private storage for progress photos (P2). No public blobs and no shared keys.
@@ -208,6 +233,12 @@ resource "azurerm_container_app_environment" "main" {
   resource_group_name        = azurerm_resource_group.main.name
   log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
   tags                       = local.tags
+
+  # Azure adds this serverless profile to every new environment; declaring it avoids drift.
+  workload_profile {
+    name                  = "Consumption"
+    workload_profile_type = "Consumption"
+  }
 }
 
 resource "azurerm_container_app" "main" {
@@ -215,6 +246,7 @@ resource "azurerm_container_app" "main" {
   container_app_environment_id = azurerm_container_app_environment.main.id
   resource_group_name          = azurerm_resource_group.main.name
   revision_mode                = "Single"
+  workload_profile_name        = "Consumption"
   tags                         = local.tags
 
   identity {
@@ -274,7 +306,7 @@ resource "azurerm_container_app" "main" {
       }
       env {
         name  = "ConnectionStrings__maxxing"
-        value = "Server=tcp:${azurerm_mssql_server.main.fully_qualified_domain_name},1433;Database=${azurerm_mssql_database.main.name};Authentication=Active Directory Managed Identity;User Id=${azurerm_user_assigned_identity.app.client_id};Encrypt=True;Connect Timeout=60"
+        value = "Server=tcp:${azurerm_mssql_server.main.fully_qualified_domain_name},1433;Database=${azapi_resource.database.name};Authentication=Active Directory Managed Identity;User Id=${azurerm_user_assigned_identity.app.client_id};Encrypt=True;Connect Timeout=60"
       }
       env {
         name  = "DataProtection__KeyVaultKeyId"

@@ -19,4 +19,5 @@
 *.tfstate
 *.tfstate.*
 *.tfvars
+backend.hcl
 crash.log

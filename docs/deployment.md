@@ -13,9 +13,24 @@ default region is West US 3.
 | Log Analytics workspace | Container and platform logs. 30-day retention, 1 GB/day cap |
 | User-assigned managed identity | The app's identity for everything above. No passwords |
 
-**Cost:** the steady costs are the Basic registry (about $5/month) and small
-storage amounts. SQL and the app bill mainly while in use. Check the Azure
-pricing page before applying, since prices change.
+**Cost** (West US 3 list prices, November 2026; check the pricing page, since
+prices change):
+
+| Item | Price | Typical month |
+|---|---|---|
+| Container Registry Basic | $0.167/day | about $5 |
+| Azure SQL serverless (free offer) | 100,000 vCore-seconds and 32 GB free per month | $0 (about 55 awake hours at 0.5 vCore) |
+| Container Apps (0.25 vCPU, 0.5 GiB, scales to zero) | about $0.027 per active hour, after a per-subscription free grant | $0–2 |
+| Log Analytics | first 5 GB/month free, then $2.30/GB | $0–1 |
+| Key Vault, storage | $0.03 per 10,000 operations; $0.02/GB-month | under $1 |
+
+So expect about **$5–8/month**. With the free offer, the database pauses for
+the rest of the month once the allowance is used up
+(`sql_free_limit_exhaustion_behavior = "AutoPause"`). Set it to
+`BillOverUsage` to keep running at about $0.26 per awake hour instead. Without
+the free offer (`use_sql_free_offer = false`, or once a subscription's single
+free database is taken), SQL pauses after 15 idle minutes and costs about
+$5–20/month depending on use.
 
 ## First deployment
 
@@ -50,7 +65,8 @@ grant on.
    ```bash
    cd infra
    cp terraform.tfvars.example terraform.tfvars   # set subscription_id and environment_name
-   terraform init
+   cp backend.hcl.example backend.hcl             # see "Remote state" below
+   terraform init -backend-config=backend.hcl
    ```
 
 2. Create the registry first, because the app can't start without an image:
@@ -111,9 +127,26 @@ grant on.
   Development and Testing, the API refuses to start without
   `DataProtection:KeyVaultKeyId`, which Terraform sets.
 
-- **State is local** (`infra/terraform.tfstate`, ignored by git). Keep that
-  file safe. It holds no app secrets. D4 #13 moves it to a remote backend so
-  CI can use it.
+- **Remote state:** Terraform state lives in Azure Storage, one blob per
+  environment (`maxxing-<environment>.tfstate`). It's created once per
+  subscription by `infra/bootstrap` (its own small local state, ignored by
+  git):
+
+  ```bash
+  cd infra/bootstrap
+  echo 'subscription_id = "<id>"' > terraform.tfvars
+  terraform init && terraform apply
+  terraform output
+  ```
+
+  The account has shared keys disabled, versioning on, and 30-day soft
+  delete. Terraform signs in with your Entra login, so anyone running it needs
+  **Storage Blob Data Contributor** on that storage account (the
+  `storage_account_id` output). D4 #13's CI identity needs the same. Copy the
+  outputs into `infra/backend.hcl` (ignored by git, so the subscription stays
+  out of the repository). To move an existing local state:
+  `terraform init -migrate-state -backend-config=backend.hcl`. The state holds
+  no app secrets.
 - **New images:** Terraform ignores the image after creation, so an apply won't
   roll back a deployment. D4 #13 automates deployments.
 - **Database access:** the app's identity is the SQL server's only admin, so it

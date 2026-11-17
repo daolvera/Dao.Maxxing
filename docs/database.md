@@ -27,10 +27,12 @@ These shape D3 #12; nothing is provisioned in A1.
 - Use the **General Purpose serverless** tier with **auto-pause**. A paused
   database bills only for storage. The first request after a pause waits for
   it to resume (up to about a minute), so the API's connection retries matter.
-- Azure SQL's **free offer** gives one serverless database a monthly allowance
-  of vCore-seconds and storage. The Terraform provider doesn't expose this offer
-  yet, so it isn't enabled. Set it to auto-pause when the allowance runs
-  out rather than bill, unless that's ever a problem.
+- Azure SQL's **free offer** gives one serverless database per subscription a
+  monthly allowance of 100,000 vCore-seconds and 32 GB. Terraform enables it
+  (through the azapi provider, since azurerm can't) and auto-pauses when the
+  allowance runs out. The offer requires the default 60-minute auto-pause and
+  32 GB max size. Without it, the database pauses after 15 minutes. See
+  [deployment.md](deployment.md) for costs.
 - Keep the minimum vCores at the lowest setting. Scale up only if queries get
   slow.
 - Check current limits and prices on the Azure pricing page when provisioning;
