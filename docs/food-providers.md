@@ -120,3 +120,33 @@ there is no paid provider for now.
 - **Corrections.** User corrections (F5) override source values.
 - **Revisit at O2:** a nightly import of US branded foods, or adding
   FatSecret, if live lookups prove slow or barcode misses are frequent.
+
+## Food model (F2)
+
+Every provider result becomes a `Food` (`Dao.Maxxing.Core/Foods`) through
+`IFoodNormalizer`, so F3, F4, and F5 all store and calculate the same way.
+
+- **Identity.** Each food has a stable `Guid` ID. Its source (`Provider` plus
+  `ExternalId`) is unique, so `IFoodCatalog.GetOrAddAsync` stores a product
+  once and later lookups return the stored copy unchanged. Updates wait for the
+  explicit refresh action.
+- **Provenance.** `FoodSource` records the provider, the provider's ID, and
+  when it was fetched.
+- **Nutrients.** These are kcal and grams of protein, carbohydrate, and fat,
+  stored **per 100 g**. Per-serving data is converted when the serving weight
+  is known. Only foods with no known weight keep per-serving values, and those
+  can be logged by serving but not by grams. kJ is converted to kcal. A
+  missing macronutrient counts as 0 g, and missing energy is estimated from
+  the macros (4/4/9).
+- **Plausibility.** More than 100 g of macronutrients or 900 kcal per 100 g is
+  rejected. This catches crowd-sourced entries with per-100 g and per-serving
+  values swapped.
+- **Servings.** Each food has named servings with an optional gram weight,
+  trimmed and de-duplicated. `INutritionCalculator` turns a portion (grams, or
+  a count of a named serving) into nutrients, or returns null when it can't
+  convert.
+- **Barcodes.** These are stored as GTIN-14, so UPC-A, EAN-13, and EAN-8 scans
+  of a product all match. Barcodes with a wrong check digit are dropped.
+  `FindByBarcodeAsync` prefers local foods over provider foods.
+- Foods are shared catalog data, not personal data. Per-user corrections and
+  favorites come with F5 #15.
