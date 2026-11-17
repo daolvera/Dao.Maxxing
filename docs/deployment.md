@@ -1,7 +1,7 @@
 # Deployment (D3)
 
 One Azure environment, defined in Terraform under [`infra/`](../infra). The
-default region is West US.
+default region is West US 3.
 
 | Resource | Purpose |
 |---|---|
@@ -20,8 +20,30 @@ pricing page before applying, since prices change.
 ## First deployment
 
 You need Terraform 1.13 or later, the Azure CLI (`az login`), and Docker.
-Your account needs Owner, or Contributor plus User Access Administrator, on the
-subscription, because Terraform creates role assignments.
+Your account needs Contributor on the subscription, plus the right to create
+the app's role assignments (below).
+
+### Role assignments
+
+Terraform gives the app's identity, and you as the deployer, these roles in
+the resource group. Assigning them needs Owner, User Access Administrator, or
+Role Based Access Control Administrator, and some organizations restrict which
+roles those can assign. If `terraform apply` fails with `AuthorizationFailed`
+on `roleAssignments/write`, ask an administrator for **Role Based Access
+Control Administrator** on `rg-maxxing-<environment>`, constrained to these
+roles:
+
+| Role | ID | Who | Scope |
+|---|---|---|---|
+| AcrPull | `7f951dda-4ed3-4680-a7ca-43fe172d538d` | app | registry |
+| Storage Blob Data Contributor | `ba92f5b4-2d11-453d-a403-e96b0029c9fe` | app | storage account |
+| Key Vault Secrets User | `4633458b-17de-408a-b874-0445c86b69e6` | app | Key Vault |
+| Key Vault Crypto Service Encryption User | `e147488a-f6f5-4113-8e2d-b22465e65bf6` | app | `data-protection` key |
+| Key Vault Secrets Officer | `b86a8fe4-44ce-4948-aee5-eccb2c155cd7` | deployer | Key Vault |
+| Key Vault Crypto Officer | `14b46e9e-c2b7-41b4-b07b-48a6ebf60603` | deployer | Key Vault |
+
+Create the resource group and registry first (step 2) so there is a scope to
+grant on.
 
 1. Configure and initialize:
 
@@ -98,7 +120,10 @@ subscription, because Terraform creates role assignments.
   can run its own migrations. To query the database yourself, temporarily set
   your account as the Entra admin, or add a database user for it first.
 - **Region errors:** some subscription types can't create Azure SQL in every
-  region. If you see `RegionDoesNotAllowProvisioning`, change `location`.
+  region. If you see `ProvisioningDisabled` or `RegionDoesNotAllowProvisioning`,
+  change `location`. To check a region first:
+  `az rest --method get --url "https://management.azure.com/subscriptions/<id>/providers/Microsoft.Sql/locations/<region>/capabilities?api-version=2021-11-01" --query status`
+  (`Available` works; `Visible` doesn't).
 - **Cold starts:** after an idle period, the first request waits for the app
   to start and the database to resume, which can take about a minute.
 - **Logs:** Azure portal → Container App → Log stream, or query

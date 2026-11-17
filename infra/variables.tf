@@ -6,7 +6,7 @@ variable "subscription_id" {
 variable "location" {
   description = "Azure region for every resource."
   type        = string
-  default     = "westus"
+  default     = "westus3"
 }
 
 variable "environment_name" {
