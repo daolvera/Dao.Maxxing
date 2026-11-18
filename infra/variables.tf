@@ -26,3 +26,20 @@ variable "public_origin" {
   type        = string
   default     = ""
 }
+
+variable "use_sql_free_offer" {
+  description = "Use Azure SQL's free offer (one database per subscription). Changing it recreates the database."
+  type        = bool
+  default     = true
+}
+
+variable "sql_free_limit_exhaustion_behavior" {
+  description = "When the free monthly allowance runs out: AutoPause (database unavailable until next month) or BillOverUsage (normal serverless billing)."
+  type        = string
+  default     = "AutoPause"
+
+  validation {
+    condition     = contains(["AutoPause", "BillOverUsage"], var.sql_free_limit_exhaustion_behavior)
+    error_message = "Use AutoPause or BillOverUsage."
+  }
+}
